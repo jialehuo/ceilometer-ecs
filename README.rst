@@ -7,7 +7,7 @@ ECS Custom Meters for Ceilometer
 This package provides files used by OpenStack Ceilometer to monitor the
 usage meters of ECS stances. With this package installed
 and configured, the Ceilometer Central Agent will poll remote ECS instances
-via REST API, and store the results as meters with the name 'ecs.meter'.
+via REST API, and store the results as meters with the name 'ecs.*'.
 
 * Free software: Apache license
 
