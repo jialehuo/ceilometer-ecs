@@ -17,42 +17,34 @@ import abc
 from oslo_utils import timeutils
 import six
 
-from ceilometer.hardware.pollsters import generic
+from ceilometer.agent import plugin_base
 from ceilometer import sample
 
 
 @six.add_metaclass(abc.ABCMeta)
-class BaseECSPollster(generic.GenericHardwareDeclarativePollster):
+class BaseECSPollster(plugin_base.PollsterBase):
 
     def __init__(self):
         super(BaseECSPollster, self).__init__()
 
-        meter = generic.MeterDefinition(self.meter_dict)
-        self._update_meter_definition(meter)
 
     @property
     def default_discovery(self):
-        return 'ecs_instances'
+        return 'tenant'
 
-    def generate_samples(self, host_url, data):
-        """Generate a list of Sample from the data returned by inspector
-
-        :param host_url: host url of the endpoint
-        :param data: list of data returned by the corresponding inspector
-        """
+    def get_samples(self, manager, cache, resources):
         samples = []
-        definition = self.meter_definition
-        for (value, metadata, extra) in data:
+        for resource in resources:
             s = sample.Sample(
-                name=definition.name,
-                type=definition.type,
-                unit=definition.unit,
-                volume=value,
-                user_id=extra['user_id'],
-                project_id=extra['tenant_id'],
-                resource_id=extra['resource_id'],
+                name='ecs.objects',
+                type=sample.TYPE_GAUGE,
+                unit='object',
+                volume=1,
+                user_id=None,
+                project_id=resource['project_id'],
+                resource_id=resource['resource_id'],
                 timestamp=timeutils.utcnow().isoformat(),
-                resource_metadata=extra,
+                resource_metadata=None,
             )
             samples.append(s)
         return samples

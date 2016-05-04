@@ -16,15 +16,8 @@
 from ceilometer_ecs import pollsters
 
 
-class ECSPollster(pollsters.BaseECSPollster):
+class ECSObjectPollster(pollsters.BaseECSPollster):
 
     def __init__(self):
-        super(ECSPollster, self).__init__()
+        super(ECSObjectPollster, self).__init__()
 
-    @property
-    def meter_dict(self):
-        return {
-            'name': 'ecs.meter',
-            'unit': 'object',
-            'type': 'gauge'
-        }

@@ -15,7 +15,7 @@
 from oslo_config import cfg
 from oslo_log import log
 
-from ceilometer.compute import discovery
+from ceilometer.agent import plugin_base
 from ceilometer.i18n import _
 
 LOG = log.getLogger(__name__)
@@ -33,44 +33,18 @@ OPTS = [
 cfg.CONF.register_opts(OPTS, group='ecs')
 
 
-class ECSDiscovery(discovery.InstanceDiscovery):
+class ECSDiscovery(plugin_base.DiscoveryBase):
     def __init__(self):
         super(ECSDiscovery, self).__init__()
 
-    @property
-    def management_network(self):
-        return cfg.CONF['ecs'].management_network
-
-    @property
-    def use_floating(self):
-        return cfg.CONF['ecs'].use_floating_ip
-
-    def _instance_ip(self, instance):
-        port = instance.addresses[self.management_network]
-
-        # Only IPv4 for now
-        use_ip = None
-        for ip in port:
-            if ip['version'] != 4:
-                continue
-            if self.use_floating and ip['OS-EXT-IPS:type'] != 'floating':
-                continue
-            use_ip = ip['addr']
-            break
-
-        # Treat no IP found the same as invalid network name
-        if use_ip is None:
-            raise KeyError
-
-        return use_ip
-
     def discover(self, manager, param=None):
-        instances = super(ECSDiscovery, self).discover(manager, param)
         endpoint = cfg.CONF['ecs'].endpoint
 
         resources = []
         resource = {
-            'endpoint': endpoint
+            'endpoint': endpoint,
+            'project_id': '1234567890',
+            'resource_id': '1234567890'
         }
 
         resources.append(resource)
