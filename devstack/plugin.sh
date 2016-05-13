@@ -10,9 +10,12 @@ function init_ceilometer_ecs {
 }
 
 function configure_ceilometer_ecs {
-    iniset $CEILOMETER_CONF ecs endpoint $CEILOMETER_ECS_ENDPOINT
-    iniset $CEILOMETER_CONF ecs use_floating_ip $CEILOMETER_ECS_USE_FLOATING_IP
-    iniset $CEILOMETER_CONF ecs management_network $CEILOMETER_ECS_MANAGEMENT_NETWORK
+    iniset $CEILOMETER_CONF ecs project_name $CEILOMETER_ECS_PROJECT_NAME
+    iniset $CEILOMETER_CONF ecs ecs_ip $CEILOMETER_ECS_ECS_IP
+    iniset $CEILOMETER_CONF ecs api_port $CEILOMETER_ECS_API_PORT
+    iniset $CEILOMETER_CONF ecs username $CEILOMETER_ECS_USERNAME
+    iniset $CEILOMETER_CONF ecs password $CEILOMETER_ECS_PASSWORD
+    iniset $CEILOMETER_CONF ecs cert_path $CEILOMETER_ECS_CERT_PATH
 }
 
 # check for service enabled

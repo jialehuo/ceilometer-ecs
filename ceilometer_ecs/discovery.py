@@ -26,9 +26,12 @@ cfg.CONF.register_group(cfg.OptGroup(
 ))
 
 OPTS = [
-    cfg.StrOpt('endpoint'),
-    cfg.StrOpt('management_network'),
-    cfg.BoolOpt('use_floating_ip', default=True)
+    cfg.StrOpt('project_name'),
+    cfg.StrOpt('ecs_ip'),
+    cfg.StrOpt('api_port'),
+    cfg.StrOpt('username'),
+    cfg.StrOpt('password'),
+    cfg.StrOpt('cert_path')
 ]
 
 cfg.CONF.register_opts(OPTS, group='ecs')
@@ -39,6 +42,24 @@ class ECSDiscovery(tenant.TenantDiscovery):
         super(ECSDiscovery, self).__init__()
 
     def discover(self, manager, param=None):
-        endpoint = cfg.CONF['ecs'].endpoint
+        project_name = cfg.CONF['ecs'].project_name
+        ecs_ip = cfg.CONF['ecs'].ecs_ip
+        api_port = cfg.CONF['ecs'].api_port
+        username = cfg.CONF['ecs'].username
+        password = cfg.CONF['ecs'].password
+        cert_path = cfg.CONF['ecs'].cert_path
 
-        return super(ECSDiscovery, manager, param=None)
+        resources = {}
+  
+        for tenant in super(ECSDiscovery, manager, param=None):
+            if (project_name == tenant.name):
+                resource = {
+                    'project_id': tenant.id,
+                    'ecs_ip': ecs_ip,
+                    'api_port': api_port,
+                    'username': username,
+                    'password': password,
+                    'cert_path': cert_path}
+                resources.append(resource)
+
+        return resources        

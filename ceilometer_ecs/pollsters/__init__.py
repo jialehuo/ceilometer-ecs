@@ -32,19 +32,3 @@ class BaseECSPollster(plugin_base.PollsterBase):
     def default_discovery(self):
         return 'tenant'
 
-    def get_samples(self, manager, cache, resources):
-        samples = []
-        for tenant in resources:
-            s = sample.Sample(
-                name='ecs.objects',
-                type=sample.TYPE_GAUGE,
-                unit='object',
-                volume=1,
-                user_id=None,
-                project_id=tenant.id,
-                resource_id=tenant.id,
-                timestamp=timeutils.utcnow().isoformat(),
-                resource_metadata=None,
-            )
-            samples.append(s)
-        return samples
