@@ -6,7 +6,8 @@ resource = {'ecs_ip': '10.1.83.51',
             'api_port': '4443',
             'username': 'jiale-huo-admin',
             'password': 'dangerous',
-            'cert_path': '/opt/stack/ecs-mgmt.cer'}
+            'cert_path': '/opt/stack/ecs-mgmt.cer',
+            'project_id': '1234567890'}
 
 dao = ecs_billing_dao.ECSBillingDAO(resource)
 
