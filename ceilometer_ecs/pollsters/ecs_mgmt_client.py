@@ -1,5 +1,6 @@
 import requests
 import xml.etree.ElementTree as ET
+import dateutil.parser
 
 class ECSManagementClient:
     AUTH_TOKEN = 'x-sds-auth-token'
@@ -21,13 +22,11 @@ class ECSManagementClient:
         namespaces = []
         for namespace in root.findall('namespace'):
             ns = {'id': namespace.find('id').text, 'name': namespace.find('name').text}
-            namespace.append(ns)
             r = requests.get(self.base_url + '/object/billing/namespace/' + ns['id'] + '/info?sizeunit=KB', headers=self.headers, verify=self.cert_path)
             bRoot = ET.fromstring(r.text)
-            ns['total_size'] = bRoot.find('total_size').text
-            ns['total_objects'] = bRoot.find('total_objects').text
-            ns['sample_time'] = bRoot.find('sample_time').text
-            # print ns
+            ns['total_size'] = int(bRoot.find('total_size').text)
+            ns['total_objects'] = int(bRoot.find('total_objects').text)
+            ns['sample_time'] = dateutil.parser.parse(bRoot.find('sample_time').text)
             namespaces.append(ns)
         return namespaces
 

@@ -1,6 +1,5 @@
 import os, sys
 from datetime import datetime
-import dateutil.parser
 import iso8601
 from ceilometer import sample
 import ecs_mgmt_config
@@ -21,12 +20,22 @@ class ECSBillingDAO():
         size = 0
         sampletime = datetime(1970, 1, 1, tzinfo=iso8601.iso8601.UTC)
         for namespace in namespaces:
-            objs += int(namespace['total_objects'])
-            size += int(namespace['total_size'])
-            t = dateutil.parser.parse(namespace['sample_time'])
-            if (sampletime < t): 
-                sampletime = t
-        s = sample.Sample(
+            samples.append(self.getNamespacesObjectsSample(namespace))
+            samples.append(self.getNamespacesSizeSample(namespace))
+            objs += namespace['total_objects']
+            size += namespace['total_size']
+            if (sampletime < namespace['sample_time']): 
+                sampletime = namespace['sample_time']
+
+        samples.append(self.getObjectsSample(objs, sampletime))
+        samples.append(self.getSizeSample(size, sampletime))
+        samples.append(self.getNamespacesSample(namespaces, sampletime))
+
+        return samples
+
+    def getObjectsSample(self, objs, sampletime):
+
+        return sample.Sample(
             name='ecs.objects',
             type=sample.TYPE_GAUGE,
             unit='object',
@@ -37,9 +46,10 @@ class ECSBillingDAO():
             timestamp=sampletime.isoformat(),
             resource_metadata=None
         ) 
-        samples.append(s)
 
-        s = sample.Sample(
+    def getSizeSample(self, size, sampletime):
+
+        return sample.Sample(
             name='ecs.objects.size',
             type=sample.TYPE_GAUGE,
             unit='KB',
@@ -50,9 +60,10 @@ class ECSBillingDAO():
             timestamp=sampletime.isoformat(),
             resource_metadata=None
         )
-        samples.append(s)
 
-        s = sample.Sample(
+    def getNamespacesSample(self, namespaces, sampletime):
+
+        return sample.Sample(
             name='ecs.objects.namespaces',
             type=sample.TYPE_GAUGE,
             unit='namespace',
@@ -63,6 +74,31 @@ class ECSBillingDAO():
             timestamp=sampletime.isoformat(),
             resource_metadata=None
         )
-        samples.append(s)
 
-        return samples
+    def getNamespacesObjectsSample(self, namespace):
+
+        return sample.Sample(
+            name='ecs.namespaces.objects',
+            type=sample.TYPE_GAUGE,
+            unit='object',
+            volume=namespace['total_objects'],
+            user_id=None,
+            project_id=self.resource['project_id'],
+            resource_id=self.resource['project_id'] + '/' + namespace['id'],
+            timestamp=namespace['sample_time'].isoformat(),
+            resource_metadata=None
+        )
+ 
+    def getNamespacesSizeSample(self, namespace):
+
+        return sample.Sample(
+            name='ecs.namespaces.objects.size',
+            type=sample.TYPE_GAUGE,
+            unit='KB',
+            volume=namespace['total_size'],
+            user_id=None,
+            project_id=self.resource['project_id'],
+            resource_id=self.resource['project_id'] + '/' + namespace['id'],
+            timestamp=namespace['sample_time'].isoformat(),
+            resource_metadata=None
+        )
