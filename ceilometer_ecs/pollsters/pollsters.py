@@ -14,6 +14,7 @@
 # under the License.
 import abc
 
+from oslo_log import log
 from oslo_utils import timeutils
 import six
 
@@ -22,6 +23,8 @@ from ceilometer import sample
 
 from ceilometer_ecs import pollsters
 from ceilometer_ecs.pollsters import ecs_billing_dao
+
+LOG = log.getLogger(__name__)
 
 @six.add_metaclass(abc.ABCMeta)
 class ECSBillingPollster(pollsters.BaseECSPollster):

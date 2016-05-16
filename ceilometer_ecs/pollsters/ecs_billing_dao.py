@@ -18,9 +18,11 @@ class ECSBillingDAO():
         namespaces = self.client.getNamespaces()
         self.client.logout()
         objs = 0
+        size = 0
         sampletime = datetime(1970, 1, 1, tzinfo=iso8601.iso8601.UTC)
         for namespace in namespaces:
             objs += int(namespace['total_objects'])
+            size += int(namespace['total_size'])
             t = dateutil.parser.parse(namespace['sample_time'])
             if (sampletime < t): 
                 sampletime = t
@@ -35,6 +37,32 @@ class ECSBillingDAO():
             timestamp=sampletime.isoformat(),
             resource_metadata=None
         ) 
+        samples.append(s)
+
+        s = sample.Sample(
+            name='ecs.objects.size',
+            type=sample.TYPE_GAUGE,
+            unit='KB',
+            volume=size,
+            user_id=None,
+            project_id=self.resource['project_id'],
+            resource_id=self.resource['project_id'],
+            timestamp=sampletime.isoformat(),
+            resource_metadata=None
+        )
+        samples.append(s)
+
+        s = sample.Sample(
+            name='ecs.objects.namespaces',
+            type=sample.TYPE_GAUGE,
+            unit='namespace',
+            volume=len(namespaces),
+            user_id=None,
+            project_id=self.resource['project_id'],
+            resource_id=self.resource['project_id'],
+            timestamp=sampletime.isoformat(),
+            resource_metadata=None
+        )
         samples.append(s)
 
         return samples

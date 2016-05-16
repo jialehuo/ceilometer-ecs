@@ -17,7 +17,6 @@ from oslo_log import log
 
 from ceilometer.agent import plugin_base
 from ceilometer.i18n import _
-from ceilometer.agent.discovery import tenant
 
 LOG = log.getLogger(__name__)
 
@@ -37,7 +36,7 @@ OPTS = [
 cfg.CONF.register_opts(OPTS, group='ecs')
 
 
-class ECSDiscovery(tenant.TenantDiscovery):
+class ECSDiscovery(plugin_base.DiscoveryBase):
     def __init__(self):
         super(ECSDiscovery, self).__init__()
 
@@ -49,9 +48,9 @@ class ECSDiscovery(tenant.TenantDiscovery):
         password = cfg.CONF['ecs'].password
         cert_path = cfg.CONF['ecs'].cert_path
 
-        resources = {}
+        resources = [] 
   
-        for tenant in super(ECSDiscovery, manager, param=None):
+        for tenant in manager.keystone.projects.list():
             if (project_name == tenant.name):
                 resource = {
                     'project_id': tenant.id,
@@ -59,7 +58,8 @@ class ECSDiscovery(tenant.TenantDiscovery):
                     'api_port': api_port,
                     'username': username,
                     'password': password,
-                    'cert_path': cert_path}
+                    'cert_path': cert_path
+                }
                 resources.append(resource)
 
         return resources        
