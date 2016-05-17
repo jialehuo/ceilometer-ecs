@@ -27,7 +27,7 @@ from ceilometer_ecs.pollsters import ecs_billing_dao
 LOG = log.getLogger(__name__)
 
 @six.add_metaclass(abc.ABCMeta)
-class ECSBillingPollster(pollsters.BaseECSPollster):
+class ECSGaugePollster(pollsters.BaseECSPollster):
 
     def __init__(self):
         super(ECSBillingPollster, self).__init__()
@@ -36,6 +36,18 @@ class ECSBillingPollster(pollsters.BaseECSPollster):
         samples = []
         for resource in resources:
             dao = ecs_billing_dao.ECSBillingDAO(resource)
-            samples.extend(dao.getSamples())
+            samples.extend(dao.getGaugeSamples())
         return samples
 
+@six.add_metaclass(abc.ABCMeta)
+class ECSDeltaPollster(pollsters.BaseECSPollster):
+
+    def __init__(self):
+        super(ECSBillingPollster, self).__init__()
+
+    def get_samples(self, manager, cache, resources):
+        samples = []
+        for resource in resources:
+            dao = ecs_billing_dao.ECSBillingDAO(resource)
+            samples.extend(dao.getDeltaSamples())
+        return samples

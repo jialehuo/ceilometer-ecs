@@ -18,7 +18,12 @@ class ECSManagementClient:
     def logout(self):
         r = requests.get(self.base_url + '/logout', headers=self.headers, verify=self.cert_path)
 
-    def getNamespaces(self):
+    def getVDCLocalID(self):
+        r = requests.get(self.base_url + '/object/vdcs/vdc/local', headers=self.headers, verify=self.cert_path)
+        root = ET.fromstring(r.text)
+        return root.find('id').text
+
+    def getNamespacesGauge(self):
         r = requests.get(self.base_url + '/object/namespaces', headers=self.headers, verify=self.cert_path)
         root = ET.fromstring(r.text)
 
@@ -27,13 +32,23 @@ class ECSManagementClient:
             ns = {'id': namespace.find('id').text, 'name': namespace.find('name').text}
             r = requests.get(self.base_url + '/object/billing/namespace/' + ns['id'] + '/info?sizeunit=KB', headers=self.headers, verify=self.cert_path)
             bRoot = ET.fromstring(r.text)
-            ns['total_size'] = int(bRoot.find('total_size').text)
-            ns['total_objects'] = int(bRoot.find('total_objects').text)
+            ns['total_size'] = long(bRoot.find('total_size').text)
+            ns['total_objects'] = long(bRoot.find('total_objects').text)
             ns['sample_time'] = dateutil.parser.parse(bRoot.find('sample_time').text)
             namespaces.append(ns)
         return namespaces
 
-    def getVDCLocalID(self):
-        r = requests.get(self.base_url + '/object/vdcs/vdc/local', headers=self.headers, verify=self.cert_path)
+    def getNamespacesDelta(self):
+        r = requests.get(self.base_url + '/object/namespaces', headers=self.headers, verify=self.cert_path)
         root = ET.fromstring(r.text)
-        return root.find('id').text
+
+        namespaces = []
+        for namespace in root.findall('namespace'):
+            ns = {'id': namespace.find('id').text, 'name': namespace.find('name').text}
+            r = requests.get(self.base_url + '/object/billing/namespace/' + ns['id'] + '/sample?start_time=2016-06-16T00:00&end_time=2016-06-17T00:00&sizeunit=KB', headers=self.headers, verify=self.cert_path)
+            bRoot = ET.fromstring(r.text)
+            ns['bytes_delta'] = long(bRoot.find('bytes_delta').text)
+            ns['objects_delta'] = long(bRoot.find('objects_created').text) - long(bRoot.find('objects_deleted').text)
+            ns['sample_time'] = dateutil.parser.parse(bRoot.find('sample_end_time').text)
+            namespaces.append(ns)
+        return namespaces

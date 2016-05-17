@@ -18,94 +18,126 @@ class ECSBillingDAO():
 
         return id
 
-    def getSamples(self):
+    def getGaugeSamples(self):
         samples = []
         self.client.login()
-        namespaces = self.client.getNamespaces()
+        namespaces = self.client.getNamespacesGauge()
         self.client.logout()
         objs = 0
         size = 0
         sampletime = datetime(1970, 1, 1, tzinfo=iso8601.iso8601.UTC)
         for namespace in namespaces:
-            samples.append(self.getNamespacesObjectsSample(namespace))
-            samples.append(self.getNamespacesSizeSample(namespace))
+            # add namespace gauge samples
+            samples.append(self.getSample(
+                name='ecs.namespaces.objects', 
+                volume=namespace['total_objects'], 
+                project_id=self.resource['project_id'], 
+                resource_id=self.resource['vdc_id']+'/'+namespace['id'], 
+                timestamp=namespace['sample_time'].isoformat())
+            )
+            samples.append(self.getSample(
+                name='ecs.namespaces.objects.size', 
+                unit='KB', 
+                volume=namespace['total_size'], 
+                project_id=self.resource['project_id'], 
+                resource_id=self.resource['vdc_id']+'/'+namespace['id'], 
+                timestamp=namespace['sample_time'].isoformat())
+            )
             objs += namespace['total_objects']
             size += namespace['total_size']
             if (sampletime < namespace['sample_time']): 
                 sampletime = namespace['sample_time']
 
-        samples.append(self.getObjectsSample(objs, sampletime))
-        samples.append(self.getSizeSample(size, sampletime))
-        samples.append(self.getNamespacesSample(namespaces, sampletime))
+        # add cluster gauge samples
+        samples.append(self.getSample(
+            name='ecs.objects', 
+            volume=objs, 
+            project_id=self.resource['project_id'],
+            resource_id=self.resource['vdc_id'],
+            timestamp=sampletime)
+        )
+        samples.append(self.getSample(
+            name='ecs.objects.size',
+            unit='KB',
+            volume=size, 
+            project_id=self.resource['project_id'],
+            resource_id=self.resource['vdc_id'],
+            timestamp=sampletime)
+        )
+        samples.append(self.getSample(
+            name='ecs.objects.namespaces',
+            unit='namespace',
+            volume=len(namespaces), 
+            project_id=self.resource['project_id'],
+            resource_id=self.resource['vdc_id'],
+            timestamp=sampletime)
+        )
 
         return samples
 
-    def getObjectsSample(self, objs, sampletime):
+    def getDeltaSamples(self):
+        samples = []
+        self.client.login()
+        namespaces = self.client.getNamespacesDelta()
+        self.client.logout()
+        objs = 0
+        size = 0
+        sampletime = datetime(1970, 1, 1, tzinfo=iso8601.iso8601.UTC)
+        for namespace in namespaces:
+            # add namespace delta samples
+            samples.append(self.getSample(
+                name='ecs.namespaces.objects.delta', 
+                type=sample.TYPE_DELTA, 
+                volume=namespace['objects_delta'], 
+                project_id=self.resource['project_id'], 
+                resource_id=self.resource['vdc_id']+'/'+namespace['id'], 
+                timestamp=namespace['sample_time'].isoformat())
+            )
+            samples.append(self.getSample(
+                name='ecs.namespaces.objects.size.delta', 
+                type=sample.TYPE_DELTA, 
+                unit='B', 
+                volume=namespace['bytes_delta'], 
+                project_id=self.resource['project_id'], 
+                resource_id=self.resource['vdc_id']+'/'+namespace['id'], 
+                timestamp=namespace['sample_time'].isoformat())
+            )
+            objs += namespace['objects_delta']
+            size += namespace['bytes_delta']
+            if (sampletime < namespace['sample_time']): 
+                sampletime = namespace['sample_time']
 
-        return sample.Sample(
-            name='ecs.objects',
-            type=sample.TYPE_GAUGE,
-            unit='object',
-            volume=objs,
-            user_id=None,
+        # add cluster delta samples
+        samples.append(self.getSample(
+            name='ecs.objects.delta', 
+            type=sample.TYPE_DELTA, 
+            volume=objs, 
             project_id=self.resource['project_id'],
             resource_id=self.resource['vdc_id'],
-            timestamp=sampletime.isoformat(),
-            resource_metadata=None
-        ) 
-
-    def getSizeSample(self, size, sampletime):
-
-        return sample.Sample(
-            name='ecs.objects.size',
-            type=sample.TYPE_GAUGE,
-            unit='KB',
+            timestamp=sampletime)
+        )
+        samples.append(self.getSample(
+            name='ecs.objects.size.delta',
+            type=sample.TYPE_DELTA,
+            unit='B',
             volume=size,
-            user_id=None,
             project_id=self.resource['project_id'],
             resource_id=self.resource['vdc_id'],
-            timestamp=sampletime.isoformat(),
-            resource_metadata=None
+            timestamp=sampletime)
         )
 
-    def getNamespacesSample(self, namespaces, sampletime):
+        return samples
+
+    def getSample(self, name, volume, project_id, resource_id, timestamp, type=sample.TYPE_GAUGE, unit='object', user_id=None, resource_metadata=None):
 
         return sample.Sample(
-            name='ecs.objects.namespaces',
-            type=sample.TYPE_GAUGE,
-            unit='namespace',
-            volume=len(namespaces),
-            user_id=None,
-            project_id=self.resource['project_id'],
-            resource_id=self.resource['vdc_id'],
-            timestamp=sampletime.isoformat(),
-            resource_metadata=None
-        )
-
-    def getNamespacesObjectsSample(self, namespace):
-
-        return sample.Sample(
-            name='ecs.namespaces.objects',
-            type=sample.TYPE_GAUGE,
-            unit='object',
-            volume=namespace['total_objects'],
-            user_id=None,
-            project_id=self.resource['project_id'],
-            resource_id=self.resource['vdc_id'] + '/' + namespace['id'],
-            timestamp=namespace['sample_time'].isoformat(),
-            resource_metadata=None
-        )
- 
-    def getNamespacesSizeSample(self, namespace):
-
-        return sample.Sample(
-            name='ecs.namespaces.objects.size',
-            type=sample.TYPE_GAUGE,
-            unit='KB',
-            volume=namespace['total_size'],
-            user_id=None,
-            project_id=self.resource['project_id'],
-            resource_id=self.resource['vdc_id'] + '/' + namespace['id'],
-            timestamp=namespace['sample_time'].isoformat(),
-            resource_metadata=None
+            name=name,
+            type=type,
+            unit=unit,
+            volume=volume,
+            user_id=user_id,
+            project_id=project_id,
+            resource_id=resource_id,
+            timestamp=timestamp,
+            resource_metadata=resource_metadata
         )
