@@ -17,6 +17,7 @@ from oslo_log import log
 
 from ceilometer.agent import plugin_base
 from ceilometer.i18n import _
+from pollsters import ecs_billing_dao
 
 LOG = log.getLogger(__name__)
 
@@ -60,6 +61,9 @@ class ECSDiscovery(plugin_base.DiscoveryBase):
                     'password': password,
                     'cert_path': cert_path
                 }
+                dao = ecs_billing_dao.ECSBillingDAO(resource)
+                resource['vdc_id'] = dao.getVDCLocalID()
+
                 resources.append(resource)
 
         return resources        

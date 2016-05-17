@@ -15,6 +15,9 @@ class ECSManagementClient:
         r = requests.get(self.base_url + '/login', auth=(self.username, self.password), verify=self.cert_path)
         self.headers = {self.AUTH_TOKEN: r.headers[self.AUTH_TOKEN]}
 
+    def logout(self):
+        r = requests.get(self.base_url + '/logout', headers=self.headers, verify=self.cert_path)
+
     def getNamespaces(self):
         r = requests.get(self.base_url + '/object/namespaces', headers=self.headers, verify=self.cert_path)
         root = ET.fromstring(r.text)
@@ -30,5 +33,7 @@ class ECSManagementClient:
             namespaces.append(ns)
         return namespaces
 
-    def logout(self):
-        r = requests.get(self.base_url + '/logout', headers=self.headers, verify=self.cert_path)
+    def getVDCLocalID(self):
+        r = requests.get(self.base_url + '/object/vdcs/vdc/local', headers=self.headers, verify=self.cert_path)
+        root = ET.fromstring(r.text)
+        return root.find('id').text

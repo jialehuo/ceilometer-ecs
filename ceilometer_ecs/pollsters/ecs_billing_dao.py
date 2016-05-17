@@ -11,6 +11,13 @@ class ECSBillingDAO():
         self.client = ecs_mgmt_client.ECSManagementClient(config)
         self.resource = resource
 
+    def getVDCLocalID(self):
+        self.client.login()
+        id = self.client.getVDCLocalID()
+        self.client.logout()
+
+        return id
+
     def getSamples(self):
         samples = []
         self.client.login()
@@ -42,7 +49,7 @@ class ECSBillingDAO():
             volume=objs,
             user_id=None,
             project_id=self.resource['project_id'],
-            resource_id=self.resource['project_id'],
+            resource_id=self.resource['vdc_id'],
             timestamp=sampletime.isoformat(),
             resource_metadata=None
         ) 
@@ -56,7 +63,7 @@ class ECSBillingDAO():
             volume=size,
             user_id=None,
             project_id=self.resource['project_id'],
-            resource_id=self.resource['project_id'],
+            resource_id=self.resource['vdc_id'],
             timestamp=sampletime.isoformat(),
             resource_metadata=None
         )
@@ -70,7 +77,7 @@ class ECSBillingDAO():
             volume=len(namespaces),
             user_id=None,
             project_id=self.resource['project_id'],
-            resource_id=self.resource['project_id'],
+            resource_id=self.resource['vdc_id'],
             timestamp=sampletime.isoformat(),
             resource_metadata=None
         )
@@ -84,7 +91,7 @@ class ECSBillingDAO():
             volume=namespace['total_objects'],
             user_id=None,
             project_id=self.resource['project_id'],
-            resource_id=self.resource['project_id'] + '/' + namespace['id'],
+            resource_id=self.resource['vdc_id'] + '/' + namespace['id'],
             timestamp=namespace['sample_time'].isoformat(),
             resource_metadata=None
         )
@@ -98,7 +105,7 @@ class ECSBillingDAO():
             volume=namespace['total_size'],
             user_id=None,
             project_id=self.resource['project_id'],
-            resource_id=self.resource['project_id'] + '/' + namespace['id'],
+            resource_id=self.resource['vdc_id'] + '/' + namespace['id'],
             timestamp=namespace['sample_time'].isoformat(),
             resource_metadata=None
         )
