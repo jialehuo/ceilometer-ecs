@@ -30,5 +30,5 @@ class BaseECSPollster(plugin_base.PollsterBase):
 
     @property
     def default_discovery(self):
-        return 'tenant'
+        return 'ecs_instances'
 
