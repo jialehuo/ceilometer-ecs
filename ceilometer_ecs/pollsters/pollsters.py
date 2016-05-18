@@ -30,7 +30,7 @@ LOG = log.getLogger(__name__)
 class ECSGaugePollster(pollsters.BaseECSPollster):
 
     def __init__(self):
-        super(ECSBillingPollster, self).__init__()
+        super(ECSGaugePollster, self).__init__()
 
     def get_samples(self, manager, cache, resources):
         samples = []
@@ -43,7 +43,7 @@ class ECSGaugePollster(pollsters.BaseECSPollster):
 class ECSDeltaPollster(pollsters.BaseECSPollster):
 
     def __init__(self):
-        super(ECSBillingPollster, self).__init__()
+        super(ECSDeltaPollster, self).__init__()
 
     def get_samples(self, manager, cache, resources):
         samples = []
