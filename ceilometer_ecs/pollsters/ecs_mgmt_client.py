@@ -1,3 +1,6 @@
+import datetime
+from datetime import datetime, timedelta
+import pytz
 import requests
 import xml.etree.ElementTree as ET
 import dateutil.parser
@@ -10,6 +13,8 @@ class ECSManagementClient:
         self.username = config.username
         self.password = config.password
         self.cert_path = config.cert_path
+        self.timezone = pytz.timezone(config.timezone)
+        self.frequency = config.frequency
 
     def login(self):
         r = requests.get(self.base_url + '/login', auth=(self.username, self.password), verify=self.cert_path)
@@ -42,10 +47,23 @@ class ECSManagementClient:
         r = requests.get(self.base_url + '/object/namespaces', headers=self.headers, verify=self.cert_path)
         root = ET.fromstring(r.text)
 
+        now = datetime.now(self.timezone)
+        if (self.frequency == 'Daily'):
+            day = now.day
+        else:
+            day = 1
+        endtime = datetime(now.year, now.month, day)
+        if (self.frequency == 'Daily'):
+            starttime = endtime - timedelta(days=1) 
+        else:
+            starttime  = endtime - timedelta(months=1)
+        endstr = self.timezone.localize(endtime).isoformat()
+        startstr = self.timezone.localize(starttime).isoformat()
+
         namespaces = []
         for namespace in root.findall('namespace'):
             ns = {'id': namespace.find('id').text, 'name': namespace.find('name').text}
-            r = requests.get(self.base_url + '/object/billing/namespace/' + ns['id'] + '/sample?start_time=2016-06-16T00:00&end_time=2016-06-17T00:00&sizeunit=KB', headers=self.headers, verify=self.cert_path)
+            r = requests.get(self.base_url + '/object/billing/namespace/' + ns['id'] + '/sample?sizeunit=KB&start_time=' + startstr + '&end_time=' + endstr, headers=self.headers, verify=self.cert_path)
             bRoot = ET.fromstring(r.text)
             ns['bytes_delta'] = long(bRoot.find('bytes_delta').text)
             ns['objects_delta'] = long(bRoot.find('objects_created').text) - long(bRoot.find('objects_deleted').text)

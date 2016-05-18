@@ -14,5 +14,5 @@ resource = {'ecs_ip': '10.1.83.51',
 dao = ecs_billing_dao.ECSBillingDAO(resource)
 vdc_id = dao.getVDCLocalID()
 resource['vdc_id'] = vdc_id
-print dao.getGaugeSamples()
+# print dao.getGaugeSamples()
 print dao.getDeltaSamples()
