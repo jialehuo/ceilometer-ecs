@@ -57,14 +57,16 @@ class ECSManagementClient:
             starttime = endtime - timedelta(days=1) 
         else:
             starttime  = endtime - timedelta(months=1)
-        endstr = self.timezone.localize(endtime).isoformat()
-        startstr = self.timezone.localize(starttime).isoformat()
+        endstr = self.timezone.localize(endtime).astimezone(pytz.utc).isoformat()
+        startstr = self.timezone.localize(starttime).astimezone(pytz.utc).isoformat()
 
         namespaces = []
         for namespace in root.findall('namespace'):
             ns = {'id': namespace.find('id').text, 'name': namespace.find('name').text}
             r = requests.get(self.base_url + '/object/billing/namespace/' + ns['id'] + '/sample?sizeunit=KB&start_time=' + startstr + '&end_time=' + endstr, headers=self.headers, verify=self.cert_path)
             bRoot = ET.fromstring(r.text)
+            ns['total_size'] = long(bRoot.find('total_size').text)
+            ns['total_objects'] = long(bRoot.find('total_objects').text)
             ns['bytes_delta'] = long(bRoot.find('bytes_delta').text)
             ns['objects_delta'] = long(bRoot.find('objects_created').text) - long(bRoot.find('objects_deleted').text)
             ns['sample_time'] = dateutil.parser.parse(bRoot.find('sample_end_time').text)

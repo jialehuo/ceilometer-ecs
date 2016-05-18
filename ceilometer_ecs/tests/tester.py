@@ -4,6 +4,14 @@ import ecs_billing_dao
 import ecs_mgmt_client
 import ecs_mgmt_config
 
+config = ecs_mgmt_config.ECSManagementConfig('10.1.83.51', '4443', 'jiale-huo-admin', 'dangerous', '/opt/stack/ecs-mgmt.cer', 'Asia/Shanghai', 'Daily')
+client = ecs_mgmt_client.ECSManagementClient(config)
+
+client.login()
+print client.getNamespacesDelta()
+print client.getNamespacesGauge()
+client.logout()
+
 resource = {'ecs_ip': '10.1.83.51',
             'api_port': '4443',
             'username': 'jiale-huo-admin',
