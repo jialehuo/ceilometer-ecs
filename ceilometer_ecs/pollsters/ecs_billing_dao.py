@@ -7,7 +7,7 @@ import ecs_mgmt_client
 
 class ECSBillingDAO():
     def __init__(self, resource):
-        config = ecs_mgmt_config.ECSManagementConfig(resource['ecs_ip'], resource['api_port'], resource['username'], resource['password'], resource['cert_path'])
+        config = ecs_mgmt_config.ECSManagementConfig(resource['ecs_ip'], resource['api_port'], resource['username'], resource['password'], resource['cert_path'], resource['timezone'], resource['frequency'], resource['endhour'], resource['samplehour'])
         self.client = ecs_mgmt_client.ECSManagementClient(config)
         self.resource = resource
 
