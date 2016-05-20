@@ -195,7 +195,7 @@ class ECSBillingDAO():
                 name='ecs.objects.outgoing.bytes',
                 type=sample.TYPE_DELTA,
                 unit='B',
-                volume=incoming_bytes,
+                volume=outgoing_bytes,
                 project_id=self.resource['project_id'],
                 resource_id=self.resource['vdc_id'],
                 timestamp=sample_end_time,
