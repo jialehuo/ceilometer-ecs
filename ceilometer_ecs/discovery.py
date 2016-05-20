@@ -70,8 +70,8 @@ class ECSDiscovery(plugin_base.DiscoveryBase):
                     'cert_path': cert_path,
                     'timezone': timezone,
                     'frequency': frequency,
-                    'end_hour': end_hour,
-                    'sample_hour': sample_hour
+                    'end_hour': int(end_hour),
+                    'sample_hour': int(sample_hour)
                 }
                 dao = ecs_billing_dao.ECSBillingDAO(resource)
                 resource['vdc_id'] = dao.getVDCLocalID()
