@@ -26,39 +26,39 @@ class ECSManagementClient:
         root = ET.fromstring(r.text)
         return root.find('id').text
 
-    def getNamespaces(self):
+    def getNamespaceSamples(self):
         now = datetime.now(self.timezone)
         if (self.config.frequency == 'Daily'):
             day = now.day
         else:
             day = 1
-        endtime = self.timezone.localize(datetime(now.year, now.month, day, self.config.endhour))
-        sampletime = self.timezone.localize(datetime(now.year, now.month, day, self.config.samplehour))
+        end_time = self.timezone.localize(datetime(now.year, now.month, day, self.config.end_hour))
+        sample_time = self.timezone.localize(datetime(now.year, now.month, day, self.config.sample_hour))
 
         namespaces = []
         nsdir = '/tmp/ceilometer-ecs'
         if not os.path.exists(nsdir):
             os.makedirs(nsdir)
 
-        if (sampletime > now): # sampling should happen later
+        if (sample_time > now): # sampling should happen later
             return namespaces
-        elif os.path.isfile(os.path.join(nsdir, endtime.isoformat())): # sampling already took place for this period
+        elif os.path.isfile(os.path.join(nsdir, end_time.isoformat())): # sampling already took place for this period
             return namespaces
 
         if(self.config.frequency == 'Daily'):
-            starttime = endtime - timedelta(days=1) 
+            start_time = end_time - timedelta(days=1) 
         else:
-            year = endtime.year
-            month = endtime.month
+            year = end_time.year
+            month = end_time.month
             if (month == 1):
                 month = 12
                 year -= 1
             else:
                 month -= 1
-            starttime  = self.timezone.localize(datetime(year, month, endtime.day, endtime.hour))
-        endstr = endtime.astimezone(pytz.utc).isoformat()
-        startstr = starttime.astimezone(pytz.utc).isoformat()
-        f = open(os.path.join(nsdir, endtime.isoformat()), 'w')     
+            start_time  = self.timezone.localize(datetime(year, month, end_time.day, end_time.hour))
+        endstr = end_time.astimezone(pytz.utc).isoformat()
+        startstr = start_time.astimezone(pytz.utc).isoformat()
+        f = open(os.path.join(nsdir, end_time.isoformat()), 'w')     
 
         r = requests.get(self.base_url + '/object/namespaces', headers=self.headers, verify=self.config.cert_path)
         root = ET.fromstring(r.text)

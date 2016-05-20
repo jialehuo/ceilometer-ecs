@@ -31,7 +31,11 @@ OPTS = [
     cfg.StrOpt('api_port'),
     cfg.StrOpt('username'),
     cfg.StrOpt('password'),
-    cfg.StrOpt('cert_path')
+    cfg.StrOpt('cert_path'),
+    cfg.StrOpt('timezone'),
+    cfg.StrOpt('frequency'),
+    cfg.StrOpt('end_hour'),
+    cfg.StrOpt('sample_hour')
 ]
 
 cfg.CONF.register_opts(OPTS, group='ecs')
@@ -48,6 +52,10 @@ class ECSDiscovery(plugin_base.DiscoveryBase):
         username = cfg.CONF['ecs'].username
         password = cfg.CONF['ecs'].password
         cert_path = cfg.CONF['ecs'].cert_path
+        timezone = cfg.CONF['ecs'].timezone
+        frequency = cfg.CONF['ecs'].frequency
+        end_hour = cfg.CONF['ecs'].end_hour
+        sample_hour = cfg.CONF['ecs'].sample_hour
 
         resources = [] 
   
@@ -59,7 +67,11 @@ class ECSDiscovery(plugin_base.DiscoveryBase):
                     'api_port': api_port,
                     'username': username,
                     'password': password,
-                    'cert_path': cert_path
+                    'cert_path': cert_path,
+                    'timezone': timezone,
+                    'frequency': frequency,
+                    'end_hour': end_hour,
+                    'sample_hour': sample_hour
                 }
                 dao = ecs_billing_dao.ECSBillingDAO(resource)
                 resource['vdc_id'] = dao.getVDCLocalID()

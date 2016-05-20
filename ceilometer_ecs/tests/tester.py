@@ -14,7 +14,7 @@ def testClient():
     client = ecs_mgmt_client.ECSManagementClient(config)
 
     client.login()
-    print client.getNamespaces()
+    print client.getNamespaceSamples()
     client.logout()
 
 # DAO test
@@ -26,16 +26,15 @@ def testDAO():
             'cert_path': '/opt/stack/ecs-mgmt.cer',
             'timezone': 'Asia/Shanghai',
             'frequency': 'Monthly',
-            'endhour': 2,
-            'samplehour': 3,
+            'end_hour': 2,
+            'sample_hour': 3,
             'project_id': '1234567890'}
 
     dao = ecs_billing_dao.ECSBillingDAO(resource)
     vdc_id = dao.getVDCLocalID()
     resource['vdc_id'] = vdc_id
-    # print dao.getGaugeSamples()
-    print dao.getDeltaSamples()
+    print dao.getSamples()
 
 cleanup()
 testClient()
-# testDAO()
+testDAO()
