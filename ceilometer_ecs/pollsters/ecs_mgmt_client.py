@@ -27,13 +27,18 @@ class ECSManagementClient:
         return root.find('id').text
 
     def getNamespaceSamples(self):
-        now = datetime.now(self.timezone)
-        if (self.config.frequency == 'Daily'):
-            day = now.day
+        if (self.config.frequency == 'Hourly'):
+            now = datetime.now(pytz.utc)
+            sample_time = pytz.utc.localize(datetime(now.year, now.month, now.day, now.hour))
+            end_time = sample_time - timedelta(hours=self.config.sample_hour)
         else:
-            day = 1
-        end_time = self.timezone.localize(datetime(now.year, now.month, day, self.config.end_hour))
-        sample_time = self.timezone.localize(datetime(now.year, now.month, day, self.config.sample_hour))
+            now = datetime.now(self.timezone)
+            if (self.config.frequency == 'Daily'):
+                day = now.day
+            else:
+                day = 1
+            end_time = self.timezone.localize(datetime(now.year, now.month, day, self.config.end_hour))
+            sample_time = self.timezone.localize(datetime(now.year, now.month, day, self.config.sample_hour))
 
         namespaces = []
         nsdir = '/tmp/ceilometer-ecs'
@@ -45,7 +50,9 @@ class ECSManagementClient:
         elif os.path.isfile(os.path.join(nsdir, end_time.isoformat())): # sampling already took place for this period
             return namespaces
 
-        if(self.config.frequency == 'Daily'):
+        if (self.config.frequency == 'Hourly'):
+            start_time = end_time - timedelta(hours=1)
+        elif (self.config.frequency == 'Daily'):
             start_time = end_time - timedelta(days=1) 
         else:
             year = end_time.year

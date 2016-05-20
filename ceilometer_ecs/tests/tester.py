@@ -10,7 +10,7 @@ def cleanup():
 
 # client test
 def testClient():
-    config = ecs_mgmt_config.ECSManagementConfig('10.1.83.51', '4443', 'jiale-huo-admin', 'dangerous', '/opt/stack/ecs-mgmt.cer', 'Asia/Shanghai', 'Daily')
+    config = ecs_mgmt_config.ECSManagementConfig('10.1.83.51', '4443', 'jiale-huo-admin', 'dangerous', '/opt/stack/ecs-mgmt.cer', 'Asia/Shanghai', 'Hourly')
     client = ecs_mgmt_client.ECSManagementClient(config)
 
     client.login()
@@ -25,9 +25,9 @@ def testDAO():
             'password': 'dangerous',
             'cert_path': '/opt/stack/ecs-mgmt.cer',
             'timezone': 'Asia/Shanghai',
-            'frequency': 'Monthly',
+            'frequency': 'Hourly',
             'end_hour': 2,
-            'sample_hour': 3,
+            'sample_hour': 1,
             'project_id': '1234567890'}
 
     dao = ecs_billing_dao.ECSBillingDAO(resource)
@@ -36,5 +36,5 @@ def testDAO():
     print dao.getSamples()
 
 cleanup()
-testClient()
+# testClient()
 testDAO()
