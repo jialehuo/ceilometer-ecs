@@ -68,14 +68,11 @@ class ECSManagementClient:
             else:
                 pbucket = pbuckets[nsid]
             ns, bucket = self.getNamespaceSample(nsid, startstr, endstr)
-            print pbucket
-            print bucket
             ns['buckets_created'] = len(bucket - pbucket)
             ns['buckets_deleted'] = len(pbucket - bucket)
             ns['total_buckets'] = len(bucket)
             buckets[nsid] = bucket
             namespaces.append(ns)
-            print ns
 
         if not os.path.exists(self.config.cache_dir):
             os.mkdir(self.config.cache_dir)

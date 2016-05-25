@@ -5,12 +5,6 @@ import ecs_mgmt_client
 import ecs_mgmt_config
 import dateutil.parser
 
-# cleanup
-def cleanup():
-    if os.path.exists('/tmp/ceilometer-ecs/start-time'):
-        os.remove('/tmp/ceilometer-ecs/start-time')
-        os.remove('/tmp/ceilometer-ecs/buckets')
-
 # client test
 def testClient():
     config = ecs_mgmt_config.ECSManagementConfig('10.1.83.51', '4443', 'jiale-huo-admin', 'dangerous', '/opt/stack/ecs-mgmt.cer', dateutil.parser.parse('2016-05-24T12:00:00Z'), 60, 30, '/opt/stack/ceilometer-ecs-cache')
@@ -38,6 +32,5 @@ def testDAO():
     resource['vdc_id'] = vdc_id
     print dao.getSamples()
 
-# cleanup()
-# testClient()
+testClient()
 testDAO()
