@@ -1,12 +1,12 @@
 class ECSManagementConfig:
 
-    def __init__(self, ecs_ip, api_port, username, password, cert_path, timezone='US/Eastern', frequency='Daily', end_hour=2, sample_hour=3):
+    def __init__(self, ecs_ip, api_port, username, password, cert_path, start_time, interval, sample_delay, cache_dir):
         self.ecs_ip = ecs_ip
         self.api_port = api_port
         self.username = username
         self.password = password
         self.cert_path = cert_path
-        self.timezone = timezone
-        self.frequency = frequency
-        self.end_hour = end_hour
-        self.sample_hour = sample_hour
+        self.start_time = start_time
+        self.interval = interval
+        self.sample_delay = sample_delay
+        self.cache_dir = cache_dir

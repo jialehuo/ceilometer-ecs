@@ -1,18 +1,21 @@
 import os
 import datetime
 from datetime import datetime, timedelta
+import pickle
 import pytz
 import requests
 import xml.etree.ElementTree as ET
 import dateutil.parser
 
 class ECSManagementClient:
+
     AUTH_TOKEN = 'x-sds-auth-token'
 
     def __init__(self, config):
         self.base_url = 'https://' + config.ecs_ip + ':' + config.api_port
-        self.timezone = pytz.timezone(config.timezone)
         self.config = config
+        self.start_time_file = os.path.join(self.config.cache_dir, 'start-time')
+        self.buckets_file = os.path.join(self.config.cache_dir, 'buckets')
 
     def login(self):
         r = requests.get(self.base_url + '/login', auth=(self.config.username, self.config.password), verify=self.config.cert_path)
@@ -26,67 +29,87 @@ class ECSManagementClient:
         root = ET.fromstring(r.text)
         return root.find('id').text
 
-    def getNamespaceSamples(self):
-        if (self.config.frequency == 'Hourly'):
-            now = datetime.now(pytz.utc)
-            sample_time = pytz.utc.localize(datetime(now.year, now.month, now.day, now.hour))
-            end_time = sample_time - timedelta(hours=self.config.sample_hour)
+    def isSampleTime(self):
+        if os.path.exists(self.start_time_file):
+            self.start_time = self.loadPickle(self.start_time_file)
         else:
-            now = datetime.now(self.timezone)
-            if (self.config.frequency == 'Daily'):
-                day = now.day
-            else:
-                day = 1
-            end_time = self.timezone.localize(datetime(now.year, now.month, day, self.config.end_hour))
-            sample_time = self.timezone.localize(datetime(now.year, now.month, day, self.config.sample_hour))
+            self.start_time = self.config.start_time
+            self.prev_start_time = self.start_time - timedelta(minutes=self.config.interval)
+        self.end_time = self.start_time + timedelta(minutes=self.config.interval)
+        self.sample_time = self.end_time + timedelta(minutes=self.config.sample_delay)
+        if (self.sample_time > datetime.now(pytz.utc)):
+            return False
+        else:
+            return True
+
+    def getNamespaceSamples(self):
 
         namespaces = []
-        nsdir = '/tmp/ceilometer-ecs'
-        if not os.path.exists(nsdir):
-            os.makedirs(nsdir)
-
-        if (sample_time > now): # sampling should happen later
+        if not self.isSampleTime():
             return namespaces
-        elif os.path.isfile(os.path.join(nsdir, end_time.isoformat())): # sampling already took place for this period
-            return namespaces
-
-        if (self.config.frequency == 'Hourly'):
-            start_time = end_time - timedelta(hours=1)
-        elif (self.config.frequency == 'Daily'):
-            start_time = end_time - timedelta(days=1) 
-        else:
-            year = end_time.year
-            month = end_time.month
-            if (month == 1):
-                month = 12
-                year -= 1
-            else:
-                month -= 1
-            start_time  = self.timezone.localize(datetime(year, month, end_time.day, end_time.hour))
-        endstr = end_time.astimezone(pytz.utc).isoformat()
-        startstr = start_time.astimezone(pytz.utc).isoformat()
-        f = open(os.path.join(nsdir, end_time.isoformat()), 'w')     
 
         r = requests.get(self.base_url + '/object/namespaces', headers=self.headers, verify=self.config.cert_path)
         root = ET.fromstring(r.text)
-        f.write(r.text)
+
+        endstr = self.end_time.astimezone(pytz.utc).isoformat()
+        startstr = self.start_time.astimezone(pytz.utc).isoformat()
+
+        if os.path.exists(self.buckets_file):
+            pbuckets = self.loadPickle(self.buckets_file)
+        else:
+            pbuckets = None
+            pstartstr = self.prev_start_time.astimezone(pytz.utc).isoformat()
+        buckets = {} 
 
         for namespace in root.findall('namespace'):
-            ns = {'id': namespace.find('id').text, 'name': namespace.find('name').text}
-            r = requests.get(self.base_url + '/object/billing/namespace/' + ns['id'] + '/sample?sizeunit=KB&start_time=' + startstr + '&end_time=' + endstr, headers=self.headers, verify=self.config.cert_path)
-            f.write(r.text)
-            bRoot = ET.fromstring(r.text)
-            ns['total_objects'] = long(bRoot.find('total_objects').text)
-            ns['total_size'] = long(bRoot.find('total_size').text)
-            ns['total_size_unit'] = bRoot.find('total_size_unit').text
-            ns['objects_created'] = long(bRoot.find('objects_created').text)
-            ns['objects_deleted'] = long(bRoot.find('objects_deleted').text)
-            ns['bytes_delta'] = long(bRoot.find('bytes_delta').text)
-            ns['ingress'] = long(bRoot.find('ingress').text)
-            ns['egress'] = long(bRoot.find('egress').text)
-            ns['sample_start_time'] = dateutil.parser.parse(bRoot.find('sample_start_time').text)
-            ns['sample_end_time'] = dateutil.parser.parse(bRoot.find('sample_end_time').text)
+            nsid = namespace.find('id').text
+            if pbuckets is None:
+                prevns, pbucket = self.getNamespaceSample(nsid, pstartstr, startstr)
+            else:
+                pbucket = pbuckets[nsid]
+            ns, bucket = self.getNamespaceSample(nsid, startstr, endstr)
+            print pbucket
+            print bucket
+            ns['buckets_created'] = len(bucket - pbucket)
+            ns['buckets_deleted'] = len(pbucket - bucket)
+            ns['total_buckets'] = len(bucket)
+            buckets[nsid] = bucket
             namespaces.append(ns)
+            print ns
 
-        f.close()
+        if not os.path.exists(self.config.cache_dir):
+            os.mkdir(self.config.cache_dir)
+        self.dumpPickle(self.end_time, self.start_time_file)
+        self.dumpPickle(buckets, self.buckets_file)
         return namespaces
+
+    def dumpPickle(self, obj, filename):
+        f = open(filename, 'w')
+        pickle.dump(obj, f)
+        f.close()
+
+    def loadPickle(self, filename):
+        f = open(filename, 'r')
+        obj = pickle.load(f)
+        f.close()
+        return obj
+
+    def getNamespaceSample(self, nsid, startstr, endstr):
+        ns = {'id': nsid}
+
+        r = requests.get(self.base_url + '/object/billing/namespace/' + nsid + '/sample?sizeunit=KB&include_bucket_detail=true&start_time=' + startstr + '&end_time=' + endstr, headers=self.headers, verify=self.config.cert_path)
+        bRoot = ET.fromstring(r.text)
+        ns['total_objects'] = long(bRoot.find('total_objects').text)
+        ns['total_size'] = long(bRoot.find('total_size').text)
+        ns['total_size_unit'] = bRoot.find('total_size_unit').text
+        ns['objects_created'] = long(bRoot.find('objects_created').text)
+        ns['objects_deleted'] = long(bRoot.find('objects_deleted').text)
+        ns['bytes_delta'] = long(bRoot.find('bytes_delta').text)
+        ns['ingress'] = long(bRoot.find('ingress').text)
+        ns['egress'] = long(bRoot.find('egress').text)
+        ns['sample_start_time'] = dateutil.parser.parse(bRoot.find('sample_start_time').text)
+        ns['sample_end_time'] = dateutil.parser.parse(bRoot.find('sample_end_time').text)
+        bucket = set()
+        for b in bRoot.findall('bucket_billing_sample'):
+            bucket.add(b.find('name').text)
+        return ns, bucket

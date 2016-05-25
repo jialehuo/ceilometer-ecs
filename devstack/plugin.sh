@@ -16,10 +16,10 @@ function configure_ceilometer_ecs {
     iniset $CEILOMETER_CONF ecs username $CEILOMETER_ECS_USERNAME
     iniset $CEILOMETER_CONF ecs password $CEILOMETER_ECS_PASSWORD
     iniset $CEILOMETER_CONF ecs cert_path $CEILOMETER_ECS_CERT_PATH
-    iniset $CEILOMETER_CONF ecs timezone $CEILOMETER_ECS_TIMEZONE
-    iniset $CEILOMETER_CONF ecs frequency $CEILOMETER_ECS_FREQUENCY
-    iniset $CEILOMETER_CONF ecs end_hour $CEILOMETER_ECS_END_HOUR
-    iniset $CEILOMETER_CONF ecs sample_hour $CEILOMETER_ECS_SAMPLE_HOUR
+    iniset $CEILOMETER_CONF ecs start_time $CEILOMETER_ECS_START_TIME
+    iniset $CEILOMETER_CONF ecs interval $CEILOMETER_ECS_INTERVAL
+    iniset $CEILOMETER_CONF ecs sample_delay $CEILOMETER_ECS_SAMPLE_DELAY
+    iniset $CEILOMETER_CONF ecs cache_dir $CEILOMETER_ECS_CACHE_DIR
 }
 
 # check for service enabled

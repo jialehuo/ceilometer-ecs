@@ -7,7 +7,7 @@ import ecs_mgmt_client
 
 class ECSBillingDAO():
     def __init__(self, resource):
-        config = ecs_mgmt_config.ECSManagementConfig(resource['ecs_ip'], resource['api_port'], resource['username'], resource['password'], resource['cert_path'], resource['timezone'], resource['frequency'], resource['end_hour'], resource['sample_hour'])
+        config = ecs_mgmt_config.ECSManagementConfig(resource['ecs_ip'], resource['api_port'], resource['username'], resource['password'], resource['cert_path'], resource['start_time'], resource['interval'], resource['sample_delay'], resource['cache_dir'])
         self.client = ecs_mgmt_client.ECSManagementClient(config)
         self.resource = resource
 
@@ -24,9 +24,12 @@ class ECSBillingDAO():
         self.client.logout()
 
         objs = 0
+        buckets = 0
         size = 0
         objs_created = 0
         objs_deleted = 0
+        buckets_created = 0
+        buckets_deleted = 0
         bytes_delta = 0
         incoming_bytes = 0
         outgoing_bytes = 0
@@ -44,9 +47,23 @@ class ECSBillingDAO():
                 volume=namespace['total_objects'], 
                 project_id=self.resource['project_id'], 
                 resource_id=self.resource['vdc_id']+'/'+namespace['id'], 
-                timestamp=sample_end_time)
-            )
+                timestamp=sample_end_time,
+                resource_metadata={'sample_start_time': sample_start_time,
+                                   'sample_end_time': sample_end_time})
+             )
             objs += namespace['total_objects']
+
+            samples.append(self.getSample(
+                name='ecs.namespaces.objects.buckets',
+                unit='bucket',
+                volume=namespace['total_buckets'], 
+                project_id=self.resource['project_id'], 
+                resource_id=self.resource['vdc_id']+'/'+namespace['id'], 
+                timestamp=sample_end_time,
+                resource_metadata={'sample_start_time': sample_start_time,
+                                   'sample_end_time': sample_end_time})
+             )
+            buckets += namespace['total_buckets']
 
             samples.append(self.getSample(
                 name='ecs.namespaces.objects.size', 
@@ -54,8 +71,10 @@ class ECSBillingDAO():
                 volume=namespace['total_size'], 
                 project_id=self.resource['project_id'], 
                 resource_id=self.resource['vdc_id']+'/'+namespace['id'], 
-                timestamp=sample_end_time)
-            )
+                timestamp=sample_end_time,
+                resource_metadata={'sample_start_time': sample_start_time,
+                                   'sample_end_time': sample_end_time})
+             )
             size += namespace['total_size']
 
             # add namespace delta samples
@@ -82,6 +101,32 @@ class ECSBillingDAO():
                                    'sample_end_time': sample_end_time})
             )
             objs_deleted += namespace['objects_deleted']
+
+            samples.append(self.getSample(
+                name='ecs.namespaces.objects.buckets.created', 
+                type=sample.TYPE_DELTA,
+                unit='bucket',
+                volume=namespace['buckets_created'], 
+                project_id=self.resource['project_id'], 
+                resource_id=self.resource['vdc_id']+'/'+namespace['id'], 
+                timestamp=sample_end_time,
+                resource_metadata={'sample_start_time': sample_start_time,
+                                   'sample_end_time': sample_end_time})
+            )
+            buckets_created += namespace['buckets_created']
+
+            samples.append(self.getSample(
+                name='ecs.namespaces.objects.buckets.deleted', 
+                type=sample.TYPE_DELTA,
+                unit='bucket',
+                volume=namespace['buckets_deleted'], 
+                project_id=self.resource['project_id'], 
+                resource_id=self.resource['vdc_id']+'/'+namespace['id'], 
+                timestamp=sample_end_time,
+                resource_metadata={'sample_start_time': sample_start_time,
+                                   'sample_end_time': sample_end_time})
+            )
+            buckets_deleted += namespace['buckets_deleted']
 
             samples.append(self.getSample(
                 name='ecs.namespaces.objects.bytes.delta', 
@@ -129,7 +174,19 @@ class ECSBillingDAO():
                 volume=objs, 
                 project_id=self.resource['project_id'],
                 resource_id=self.resource['vdc_id'],
-                timestamp=sample_end_time)
+                timestamp=sample_end_time,
+                resource_metadata={'sample_start_time': sample_start_time,
+                                   'sample_end_time': sample_end_time})
+            )
+            samples.append(self.getSample(
+                name='ecs.objects.buckets',
+                unit='bucket',
+                volume=buckets, 
+                project_id=self.resource['project_id'],
+                resource_id=self.resource['vdc_id'],
+                timestamp=sample_end_time,
+                resource_metadata={'sample_start_time': sample_start_time,
+                                   'sample_end_time': sample_end_time})
             )
             samples.append(self.getSample(
                 name='ecs.objects.size',
@@ -137,7 +194,9 @@ class ECSBillingDAO():
                 volume=size, 
                 project_id=self.resource['project_id'],
                 resource_id=self.resource['vdc_id'],
-                timestamp=sample_end_time)
+                timestamp=sample_end_time,
+                resource_metadata={'sample_start_time': sample_start_time,
+                                   'sample_end_time': sample_end_time})
             )
             samples.append(self.getSample(
                 name='ecs.objects.namespaces',
@@ -145,7 +204,9 @@ class ECSBillingDAO():
                 volume=len(namespaces), 
                 project_id=self.resource['project_id'],
                 resource_id=self.resource['vdc_id'],
-                timestamp=sample_end_time)
+                timestamp=sample_end_time,
+                resource_metadata={'sample_start_time': sample_start_time,
+                                   'sample_end_time': sample_end_time})
             )
 
             # add cluster delta samples
@@ -163,6 +224,28 @@ class ECSBillingDAO():
                 name='ecs.objects.deleted', 
                 type=sample.TYPE_DELTA, 
                 volume=objs_deleted, 
+                project_id=self.resource['project_id'],
+                resource_id=self.resource['vdc_id'],
+                timestamp=sample_end_time,
+                resource_metadata={'sample_start_time': sample_start_time,
+                                   'sample_end_time': sample_end_time})
+            )
+            samples.append(self.getSample(
+                name='ecs.objects.buckets.created', 
+                type=sample.TYPE_DELTA,
+                unit='bucket',
+                volume=buckets_created, 
+                project_id=self.resource['project_id'],
+                resource_id=self.resource['vdc_id'],
+                timestamp=sample_end_time,
+                resource_metadata={'sample_start_time': sample_start_time,
+                                   'sample_end_time': sample_end_time})
+            )
+            samples.append(self.getSample(
+                name='ecs.objects.buckets.deleted', 
+                type=sample.TYPE_DELTA,
+                unit='bucket', 
+                volume=buckets_deleted, 
                 project_id=self.resource['project_id'],
                 resource_id=self.resource['vdc_id'],
                 timestamp=sample_end_time,

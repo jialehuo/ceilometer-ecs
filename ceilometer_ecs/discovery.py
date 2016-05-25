@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import dateutil.parser
 from oslo_config import cfg
 from oslo_log import log
 
@@ -32,10 +33,10 @@ OPTS = [
     cfg.StrOpt('username'),
     cfg.StrOpt('password'),
     cfg.StrOpt('cert_path'),
-    cfg.StrOpt('timezone'),
-    cfg.StrOpt('frequency'),
-    cfg.StrOpt('end_hour'),
-    cfg.StrOpt('sample_hour')
+    cfg.StrOpt('start_time'),
+    cfg.StrOpt('interval'),
+    cfg.StrOpt('sample_delay'),
+    cfg.StrOpt('cache_dir')
 ]
 
 cfg.CONF.register_opts(OPTS, group='ecs')
@@ -52,10 +53,10 @@ class ECSDiscovery(plugin_base.DiscoveryBase):
         username = cfg.CONF['ecs'].username
         password = cfg.CONF['ecs'].password
         cert_path = cfg.CONF['ecs'].cert_path
-        timezone = cfg.CONF['ecs'].timezone
-        frequency = cfg.CONF['ecs'].frequency
-        end_hour = cfg.CONF['ecs'].end_hour
-        sample_hour = cfg.CONF['ecs'].sample_hour
+        start_time = cfg.CONF['ecs'].start_time
+        interval = cfg.CONF['ecs'].interval
+        sample_delay = cfg.CONF['ecs'].sample_delay
+        cache_dir = cfg.CONF['ecs'].cache_dir
 
         resources = [] 
   
@@ -68,10 +69,10 @@ class ECSDiscovery(plugin_base.DiscoveryBase):
                     'username': username,
                     'password': password,
                     'cert_path': cert_path,
-                    'timezone': timezone,
-                    'frequency': frequency,
-                    'end_hour': int(end_hour),
-                    'sample_hour': int(sample_hour)
+                    'start_time': dateutil.parser.parse(start_time),
+                    'interval': int(interval),
+                    'sample_delay': int(sample_delay),
+                    'cache_dir': int(cache_dir)
                 }
                 dao = ecs_billing_dao.ECSBillingDAO(resource)
                 resource['vdc_id'] = dao.getVDCLocalID()
