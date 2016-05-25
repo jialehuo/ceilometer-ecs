@@ -72,7 +72,7 @@ class ECSDiscovery(plugin_base.DiscoveryBase):
                     'start_time': dateutil.parser.parse(start_time),
                     'interval': int(interval),
                     'sample_delay': int(sample_delay),
-                    'cache_dir': int(cache_dir)
+                    'cache_dir': cache_dir
                 }
                 dao = ecs_billing_dao.ECSBillingDAO(resource)
                 resource['vdc_id'] = dao.getVDCLocalID()
