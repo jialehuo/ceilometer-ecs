@@ -35,7 +35,7 @@ class ECSBillingPollster(pollsters.BaseECSPollster):
     def get_samples(self, manager, cache, resources):
         samples = []
         for resource in resources:
-            dao = ecs_billing_dao.ECSBillingDAO(resource)
+            dao = ecs_billing_dao.ECSBillingDAO(resource, cache)
             samples.extend(dao.getSamples())
         return samples
 

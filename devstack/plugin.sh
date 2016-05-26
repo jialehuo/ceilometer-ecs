@@ -19,7 +19,6 @@ function configure_ceilometer_ecs {
     iniset $CEILOMETER_CONF ecs start_time $CEILOMETER_ECS_START_TIME
     iniset $CEILOMETER_CONF ecs interval $CEILOMETER_ECS_INTERVAL
     iniset $CEILOMETER_CONF ecs sample_delay $CEILOMETER_ECS_SAMPLE_DELAY
-    iniset $CEILOMETER_CONF ecs cache_dir $CEILOMETER_ECS_CACHE_DIR
 }
 
 # check for service enabled

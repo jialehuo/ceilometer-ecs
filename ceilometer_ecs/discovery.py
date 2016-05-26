@@ -35,8 +35,7 @@ OPTS = [
     cfg.StrOpt('cert_path'),
     cfg.StrOpt('start_time'),
     cfg.StrOpt('interval'),
-    cfg.StrOpt('sample_delay'),
-    cfg.StrOpt('cache_dir')
+    cfg.StrOpt('sample_delay')
 ]
 
 cfg.CONF.register_opts(OPTS, group='ecs')
@@ -56,7 +55,6 @@ class ECSDiscovery(plugin_base.DiscoveryBase):
         start_time = cfg.CONF['ecs'].start_time
         interval = cfg.CONF['ecs'].interval
         sample_delay = cfg.CONF['ecs'].sample_delay
-        cache_dir = cfg.CONF['ecs'].cache_dir
 
         resources = [] 
   
@@ -71,8 +69,7 @@ class ECSDiscovery(plugin_base.DiscoveryBase):
                     'cert_path': cert_path,
                     'start_time': dateutil.parser.parse(start_time),
                     'interval': int(interval),
-                    'sample_delay': int(sample_delay),
-                    'cache_dir': cache_dir
+                    'sample_delay': int(sample_delay)
                 }
                 dao = ecs_billing_dao.ECSBillingDAO(resource)
                 resource['vdc_id'] = dao.getVDCLocalID()

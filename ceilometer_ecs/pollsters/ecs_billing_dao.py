@@ -6,9 +6,9 @@ import ecs_mgmt_config
 import ecs_mgmt_client
 
 class ECSBillingDAO():
-    def __init__(self, resource):
+    def __init__(self, resource, cache):
         config = ecs_mgmt_config.ECSManagementConfig(resource['ecs_ip'], resource['api_port'], resource['username'], resource['password'], resource['cert_path'], resource['start_time'], resource['interval'], resource['sample_delay'], resource['cache_dir'])
-        self.client = ecs_mgmt_client.ECSManagementClient(config)
+        self.client = ecs_mgmt_client.ECSManagementClient(config, cache)
         self.resource = resource
 
     def getVDCLocalID(self):

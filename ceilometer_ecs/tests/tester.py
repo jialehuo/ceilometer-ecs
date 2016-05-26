@@ -8,9 +8,11 @@ import dateutil.parser
 # client test
 def testClient():
     config = ecs_mgmt_config.ECSManagementConfig('10.1.83.51', '4443', 'jiale-huo-admin', 'dangerous', '/opt/stack/ecs-mgmt.cer', dateutil.parser.parse('2016-05-24T12:00:00Z'), 60, 30, '/opt/stack/ceilometer-ecs-cache')
-    client = ecs_mgmt_client.ECSManagementClient(config)
+    cache = {}
+    client = ecs_mgmt_client.ECSManagementClient(config, cache)
 
     client.login()
+    print client.getNamespaceSamples()
     print client.getNamespaceSamples()
     client.logout()
 
@@ -27,10 +29,12 @@ def testDAO():
             'cache_dir': '/opt/stack/ceilometer-ecs-cache',
             'project_id': '1234567890'}
 
-    dao = ecs_billing_dao.ECSBillingDAO(resource)
+    cache = {}
+    dao = ecs_billing_dao.ECSBillingDAO(resource, cache)
     vdc_id = dao.getVDCLocalID()
     resource['vdc_id'] = vdc_id
     print dao.getSamples()
+    print dao.getSamples()
 
-testClient()
+# testClient()
 testDAO()
