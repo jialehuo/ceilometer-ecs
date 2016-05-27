@@ -17,7 +17,7 @@ import abc
 from oslo_log import log
 import six
 
-from ceilometer_ecs.pollsters import pollsters
+from ceilometer_ecs import pollsters
 from ceilometer_ecs.pollsters import ecs_billing_dao
 
 LOG = log.getLogger(__name__)
