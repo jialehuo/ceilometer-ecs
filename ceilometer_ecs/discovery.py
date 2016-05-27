@@ -28,7 +28,6 @@ cfg.CONF.register_group(cfg.OptGroup(
 ))
 
 OPTS = [
-    cfg.StrOpt('project_name'),
     cfg.StrOpt('ecs_ip'),
     cfg.StrOpt('api_port'),
     cfg.StrOpt('username'),
@@ -47,7 +46,6 @@ class ECSDiscovery(plugin_base.DiscoveryBase):
         super(ECSDiscovery, self).__init__()
 
     def discover(self, manager, param=None):
-        project_name = cfg.CONF['ecs'].project_name
         ecs_ip = cfg.CONF['ecs'].ecs_ip
         api_port = cfg.CONF['ecs'].api_port
         username = cfg.CONF['ecs'].username
@@ -59,22 +57,20 @@ class ECSDiscovery(plugin_base.DiscoveryBase):
 
         resources = [] 
   
-        for tenant in manager.keystone.projects.list():
-            if (project_name == tenant.name):
-                resource = ecs_instance.ECSInstance(
-                    ecs_ip=ecs_ip,
-                    api_port=api_port,
-                    username=username,
-                    password=password,
-                    cert_path=cert_path,
-                    start_time=dateutil.parser.parse(start_time),
-                    interval=int(interval),
-                    sample_delay=int(sample_delay),
-                    project_id=tenant.id
-                )
-                dao = ecs_billing_dao.ECSBillingDAO(resource)
-                resource.vdc_id = dao.getVDCLocalID()
+        # for tenant in manager.keystone.projects.list():
+        resource = ecs_instance.ECSInstance(
+            ecs_ip=ecs_ip,
+            api_port=api_port,
+            username=username,
+            password=password,
+            cert_path=cert_path,
+            start_time=dateutil.parser.parse(start_time),
+            interval=int(interval),
+            sample_delay=int(sample_delay)
+        )
+        dao = ecs_billing_dao.ECSBillingDAO(resource)
+        resource.vdc_id = dao.getVDCLocalID()
 
-                resources.append(resource)
+        resources.append(resource)
 
         return resources        

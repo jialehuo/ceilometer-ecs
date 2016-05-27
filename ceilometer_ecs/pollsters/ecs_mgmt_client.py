@@ -40,7 +40,7 @@ class ECSManagementClient:
         else:
             return True
 
-    def getNamespaceSamples(self, cache):
+    def getNamespaceSamples(self, manager, cache):
         namespaces = []
         if not self.isSampleTime(cache):
             return namespaces
@@ -48,42 +48,53 @@ class ECSManagementClient:
         endstr = self.end_time.astimezone(pytz.utc).isoformat()
         startstr = self.start_time.astimezone(pytz.utc).isoformat()
 
-        r = requests.get(self.base_url + '/object/namespaces', headers=self.headers, verify=self.resource.cert_path)
-        root = ET.fromstring(r.text)
-
-        for namespace in root.findall('namespace'):
-            nsid = namespace.find('id').text
-            ns = self.getNamespaceSample(nsid, startstr, endstr)
-            namespaces.append(ns)
+        for project in manager.keystone.projects.list():
+            id = project.id
+            namespace = self.getNamespaceSample(id, startstr, endstr)
+            namespaces.append(namespace)
 
         cache[self.START_TIME_CACHE] = self.end_time
         return namespaces
 
-    def getNamespaceSample(self, nsid, startstr, endstr):
-        ns = {'id': nsid}
-
-        r = requests.get(self.base_url + '/object/billing/namespace/' + nsid + '/sample?sizeunit=KB&include_bucket_detail=true&start_time=' + startstr + '&end_time=' + endstr, headers=self.headers, verify=self.resource.cert_path)
+    def getNamespaceSample(self, id, startstr, endstr):
+        r = requests.get(self.base_url + '/object/billing/namespace/' + id + '/sample?sizeunit=KB&include_bucket_detail=true&start_time=' + startstr + '&end_time=' + endstr, headers=self.headers, verify=self.resource.cert_path)
         root = ET.fromstring(r.text)
-        ns['total_objects'] = long(root.find('total_objects').text)
-        ns['total_buckets'] = len(root.findall('bucket_billing_sample'))
-        ns['total_size'] = long(root.find('total_size').text)
-        ns['total_size_unit'] = root.find('total_size_unit').text
-        ns['objects_created'] = long(root.find('objects_created').text)
-        ns['objects_deleted'] = long(root.find('objects_deleted').text)
-        ns['bytes_delta'] = long(root.find('bytes_delta').text)
-        ns['ingress'] = long(root.find('ingress').text)
-        ns['egress'] = long(root.find('egress').text)
-        ns['sample_start_time'] = dateutil.parser.parse(root.find('sample_start_time').text)
-        ns['sample_end_time'] = dateutil.parser.parse(root.find('sample_end_time').text)
+        namespace = {'id': id}
+        namespace['total_objects'] = long(root.find('total_objects').text)
+        namespace['total_buckets'] = len(root.findall('./bucket_billing_sample/name'))
+        namespace['total_size'] = long(root.find('total_size').text)
+        namespace['total_size_unit'] = root.find('total_size_unit').text
+        namespace['objects_created'] = long(root.find('objects_created').text)
+        namespace['objects_deleted'] = long(root.find('objects_deleted').text)
+        namespace['bytes_delta'] = long(root.find('bytes_delta').text)
+        namespace['ingress'] = long(root.find('ingress').text)
+        namespace['egress'] = long(root.find('egress').text)
+        namespace['sample_start_time'] = dateutil.parser.parse(root.find('sample_start_time').text)
+        namespace['sample_end_time'] = dateutil.parser.parse(root.find('sample_end_time').text)
+
+        while True:
+            if (root.find('next_marker') is None) or (not root.find('next_marker').text.strip()):
+                break
+            else:
+                next_marker = '&marker=' + root.find('next_marker').text.strip()
+                r = requests.get(self.base_url + '/object/billing/namespace/' + id + '/sample?sizeunit=KB&include_bucket_detail=true&start_time=' + startstr + '&end_time=' + endstr + '&marker=' + next_marker, headers=self.headers, verify=self.resource.cert_path)
+                root = ET.fromstring(r.text)
+                namespace['total_buckets'] += len(root.findall('./bucket_billing_sample/name'))
 
         # get bucket delta samples through audit events
-        ns['buckets_created'] = 0
-        ns['buckets_deleted'] = 0
-        r = requests.get(self.base_url + '/vdc/events?namespace=' + nsid + '&start_time=' + startstr + '&end_time=' + endstr, headers=self.headers, verify=self.resource.cert_path)
-        root = ET.fromstring(r.text)
-        for auditevent in root.findall('./auditevent/description'):
-            if self.BUCKET_CREATED_PATTERN.match(auditevent.text):
-                ns['buckets_created'] += 1
-            elif self.BUCKET_DELETED_PATTERN.match(auditevent.text):
-                ns['buckets_deleted'] += 1 
-        return ns
+        namespace['buckets_created'] = 0
+        namespace['buckets_deleted'] = 0
+        next_marker = ''
+        while True:
+            r = requests.get(self.base_url + '/vdc/events?namespace=' + id + '&start_time=' + startstr + '&end_time=' + endstr + next_marker, headers=self.headers, verify=self.resource.cert_path)
+            root = ET.fromstring(r.text)
+            for auditevent in root.findall('./auditevent/description'):
+                if self.BUCKET_CREATED_PATTERN.match(auditevent.text):
+                    namespace['buckets_created'] += 1
+                elif self.BUCKET_DELETED_PATTERN.match(auditevent.text):
+                    namespace['buckets_deleted'] += 1
+            if (root.find('NextMarker') is None) or (not root.find('NextMarker').text.strip()):
+                break
+            else:
+                next_marker = '&marker=' + root.find('NextMarker').text.strip()
+        return namespace

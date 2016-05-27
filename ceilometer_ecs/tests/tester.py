@@ -19,6 +19,13 @@ resource = ecs_instance.ECSInstance(
 )
 cache = {}
 
+def testDashboard():
+    client = ecs_mgmt_client.ECSManagementClient(resource)
+
+    client.login()
+    client.getDashboard()
+    client.logout()
+
 # client test
 def testClient():
     client = ecs_mgmt_client.ECSManagementClient(resource)
@@ -36,5 +43,6 @@ def testDAO():
     print dao.getSamples(cache)
     print dao.getSamples(cache)
 
-testClient()
-testDAO()
+testDashboard()
+# testClient()
+# testDAO()
