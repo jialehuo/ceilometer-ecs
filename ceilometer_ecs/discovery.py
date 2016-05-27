@@ -18,6 +18,7 @@ from oslo_log import log
 
 from ceilometer.agent import plugin_base
 from ceilometer.i18n import _
+import ecs_instance
 from pollsters import ecs_billing_dao
 
 LOG = log.getLogger(__name__)
@@ -60,19 +61,19 @@ class ECSDiscovery(plugin_base.DiscoveryBase):
   
         for tenant in manager.keystone.projects.list():
             if (project_name == tenant.name):
-                resource = {
-                    'project_id': tenant.id,
-                    'ecs_ip': ecs_ip,
-                    'api_port': api_port,
-                    'username': username,
-                    'password': password,
-                    'cert_path': cert_path,
-                    'start_time': dateutil.parser.parse(start_time),
-                    'interval': int(interval),
-                    'sample_delay': int(sample_delay)
-                }
+                resource = ecs_instance.ECSInstance(
+                    ecs_ip=ecs_ip,
+                    api_port=api_port,
+                    username=username,
+                    password=password,
+                    cert_path=cert_path,
+                    start_time=dateutil.parser.parse(start_time),
+                    interval=int(interval),
+                    sample_delay=int(sample_delay),
+                    project_id=tenant.id
+                )
                 dao = ecs_billing_dao.ECSBillingDAO(resource)
-                resource['vdc_id'] = dao.getVDCLocalID()
+                resource.vdc_id = dao.getVDCLocalID()
 
                 resources.append(resource)
 

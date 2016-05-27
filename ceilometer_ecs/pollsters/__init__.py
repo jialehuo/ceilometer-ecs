@@ -14,11 +14,9 @@
 
 import abc
 
-from oslo_utils import timeutils
 import six
 
 from ceilometer.agent import plugin_base
-from ceilometer import sample
 
 
 @six.add_metaclass(abc.ABCMeta)

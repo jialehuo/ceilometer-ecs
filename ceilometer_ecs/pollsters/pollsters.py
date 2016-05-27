@@ -15,13 +15,9 @@
 import abc
 
 from oslo_log import log
-from oslo_utils import timeutils
 import six
 
-from ceilometer.agent import plugin_base
-from ceilometer import sample
-
-from ceilometer_ecs import pollsters
+from ceilometer_ecs.pollsters import pollsters
 from ceilometer_ecs.pollsters import ecs_billing_dao
 
 LOG = log.getLogger(__name__)
@@ -35,7 +31,7 @@ class ECSBillingPollster(pollsters.BaseECSPollster):
     def get_samples(self, manager, cache, resources):
         samples = []
         for resource in resources:
-            dao = ecs_billing_dao.ECSBillingDAO(resource, cache)
-            samples.extend(dao.getSamples())
+            dao = ecs_billing_dao.ECSBillingDAO(resource)
+            samples.extend(dao.getSamples(cache))
         return samples
 

@@ -1,6 +1,6 @@
-class ECSManagementConfig:
+class ECSInstance:
 
-    def __init__(self, ecs_ip, api_port, username, password, cert_path, start_time, interval, sample_delay, cache_dir):
+    def __init__(self, ecs_ip, api_port, username, password, cert_path, start_time, interval, sample_delay, project_id):
         self.ecs_ip = ecs_ip
         self.api_port = api_port
         self.username = username
@@ -9,4 +9,5 @@ class ECSManagementConfig:
         self.start_time = start_time
         self.interval = interval
         self.sample_delay = sample_delay
-        self.cache_dir = cache_dir
+        self.project_id = project_id
+        self.vdc_id = ''
