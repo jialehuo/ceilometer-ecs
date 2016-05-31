@@ -49,37 +49,55 @@ class ECSManagementClient:
         startstr = self.start_time.astimezone(pytz.utc).isoformat()
 
         for project in manager.keystone.projects.list():
-            id = project.id
-            namespace = self.getNamespaceSample(id, startstr, endstr)
-            namespaces.append(namespace)
+            namespace = self.getNamespaceSample(project.id, startstr, endstr)
+            if namespace is not None:
+                namespaces.append(namespace)
 
         cache[self.START_TIME_CACHE] = self.end_time
+
         return namespaces
 
+    def isValidElem(self, elem):
+        return (elem is not None) and (elem.text is not None) and bool(elem.text.strip())
+
     def getNamespaceSample(self, id, startstr, endstr):
-        r = requests.get(self.base_url + '/object/billing/namespace/' + id + '/sample?sizeunit=KB&include_bucket_detail=true&start_time=' + startstr + '&end_time=' + endstr, headers=self.headers, verify=self.resource.cert_path)
-        root = ET.fromstring(r.text)
-        namespace = {'id': id}
-        namespace['total_objects'] = long(root.find('total_objects').text)
-        namespace['total_buckets'] = len(root.findall('./bucket_billing_sample/name'))
-        namespace['total_size'] = long(root.find('total_size').text)
-        namespace['total_size_unit'] = root.find('total_size_unit').text
-        namespace['objects_created'] = long(root.find('objects_created').text)
-        namespace['objects_deleted'] = long(root.find('objects_deleted').text)
-        namespace['bytes_delta'] = long(root.find('bytes_delta').text)
-        namespace['ingress'] = long(root.find('ingress').text)
-        namespace['egress'] = long(root.find('egress').text)
-        namespace['sample_start_time'] = dateutil.parser.parse(root.find('sample_start_time').text)
-        namespace['sample_end_time'] = dateutil.parser.parse(root.find('sample_end_time').text)
+        namespace = {'id': id, 'total_buckets': 0}
+        next_marker = ''
 
         while True:
-            if (root.find('next_marker') is None) or (not root.find('next_marker').text.strip()):
-                break
-            else:
-                next_marker = '&marker=' + root.find('next_marker').text.strip()
-                r = requests.get(self.base_url + '/object/billing/namespace/' + id + '/sample?sizeunit=KB&include_bucket_detail=true&start_time=' + startstr + '&end_time=' + endstr + '&marker=' + next_marker, headers=self.headers, verify=self.resource.cert_path)
-                root = ET.fromstring(r.text)
+            r = requests.get(self.base_url + '/object/billing/namespace/' + id + '/sample?sizeunit=KB&include_bucket_detail=true&start_time=' + startstr + '&end_time=' + endstr + next_marker, headers=self.headers, verify=self.resource.cert_path)
+            root = ET.fromstring(r.text)
+
+            if root.tag == 'error':
+                return None
+
+            if self.isValidElem(root.find('total_objects')):
+                namespace['total_objects'] = long(root.find('total_objects').text.strip())
+            if self.isValidElem(root.find('total_size')):
+                namespace['total_size'] = long(root.find('total_size').text.strip())
+            if self.isValidElem(root.find('total_size_unit')):
+                namespace['total_size_unit'] = root.find('total_size_unit').text.strip()
+            if self.isValidElem(root.find('objects_created')):
+                namespace['objects_created'] = long(root.find('objects_created').text.strip())
+            if self.isValidElem(root.find('objects_deleted')):
+                namespace['objects_deleted'] = long(root.find('objects_deleted').text.strip())
+            if self.isValidElem(root.find('bytes_delta')):
+                namespace['bytes_delta'] = long(root.find('bytes_delta').text.strip())
+            if self.isValidElem(root.find('ingress')):
+                namespace['ingress'] = long(root.find('ingress').text.strip())
+            if self.isValidElem(root.find('egress')):
+                namespace['egress'] = long(root.find('egress').text.strip())
+            if self.isValidElem(root.find('sample_start_time')):
+                namespace['sample_start_time'] = dateutil.parser.parse(root.find('sample_start_time').text.strip())
+            if self.isValidElem(root.find('sample_end_time')):
+                namespace['sample_end_time'] = dateutil.parser.parse(root.find('sample_end_time').text.strip())
+            if (root.findall('./bucket_billing_sample/name') is not None):
                 namespace['total_buckets'] += len(root.findall('./bucket_billing_sample/name'))
+            
+            if self.isValidElem(root.find('next_marker')):
+                next_marker = '&marker=' + root.find('next_marker').text.strip()
+            else:
+                break
 
         # get bucket delta samples through audit events
         namespace['buckets_created'] = 0
@@ -93,8 +111,9 @@ class ECSManagementClient:
                     namespace['buckets_created'] += 1
                 elif self.BUCKET_DELETED_PATTERN.match(auditevent.text):
                     namespace['buckets_deleted'] += 1
-            if (root.find('NextMarker') is None) or (not root.find('NextMarker').text.strip()):
-                break
-            else:
+            if self.isValidElem(root.find('NextMarker')):
                 next_marker = '&marker=' + root.find('NextMarker').text.strip()
+            else:
+                break
+
         return namespace
