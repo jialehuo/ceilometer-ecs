@@ -4,6 +4,7 @@ import pytz
 import requests
 import xml.etree.ElementTree as ET
 import dateutil.parser
+from ceilometerclient.v2 import client as ceiloclient
 
 class ECSManagementClient:
 
@@ -13,27 +14,53 @@ class ECSManagementClient:
     START_TIME_CACHE = 'ecs_start_time'
 
     def __init__(self, resource):
-        self.base_url = 'https://' + resource.ecs_ip + ':' + resource.api_port
         self.resource = resource 
 
+    def isValidElem(self, elem):
+        return (elem is not None) and (elem.text is not None) and bool(elem.text.strip())
+
     def login(self):
-        r = requests.get(self.base_url + '/login', auth=(self.resource.username, self.resource.password), verify=self.resource.cert_path)
+        r = requests.get(self.resource.ecs_endpoint + '/login', auth=(self.resource.ecs_username, self.resource.ecs_password), verify=self.resource.ecs_cert_path)
         self.headers = {self.AUTH_TOKEN: r.headers[self.AUTH_TOKEN]}
 
     def logout(self):
-        r = requests.get(self.base_url + '/logout', headers=self.headers, verify=self.resource.cert_path)
+        r = requests.get(self.resource.ecs_endpoint + '/logout', headers=self.headers, verify=self.resource.ecs_cert_path)
 
     def getVDCLocalID(self):
-        r = requests.get(self.base_url + '/object/vdcs/vdc/local', headers=self.headers, verify=self.resource.cert_path)
+        r = requests.get(self.resource.ecs_endpoint + '/object/vdcs/vdc/local', headers=self.headers, verify=self.resource.ecs_cert_path)
         root = ET.fromstring(r.text)
-        return root.find('id').text
+        if self.isValidElem(root.find('id')):
+            return root.find('id').text.strip()
+        else:
+            return None
+
+    def getStartTime(self):
+        kwargs = {
+            'project_name': self.resource.os_project_name, 
+            'project_domain_name': self.resource.os_project_domain_name, 
+            'username': self.resource.os_username, 
+            'password': self.resource.os_password, 
+            'user_domain_name': self.resource.os_user_domain_name, 
+            'auth_url': self.resource.os_auth_url
+        }
+ 
+        client = ceiloclient.Client(self.resource.ceilometer_endpoint, **kwargs)
+        filter = "{\"=\": {\"meter\": \"ecs.objects\"}}"
+        orderby = "[{\"timestamp\": \"DESC\"}]"
+        limit = 1
+
+        result = client.query_samples.query(filter=filter, orderby=orderby, limit=limit)
+        if (result is not None) and (len(result) > 0) and (result[0].to_dict() is not None) and (result[0].to_dict().get("metadata") is not None) and (result[0].to_dict().get("metadata").get("sample_end_time") is not None):
+            return dateutil.parser.parse(result[0].to_dict().get("metadata").get("sample_end_time"))
+        else:
+            return self.resource.sample_start_time
 
     def isSampleTime(self, cache):
         if self.START_TIME_CACHE not in cache:
-            cache[self.START_TIME_CACHE] = self.resource.start_time
+            cache[self.START_TIME_CACHE] = self.getStartTime()
 
         self.start_time = cache[self.START_TIME_CACHE]
-        self.end_time = self.start_time + timedelta(minutes=self.resource.interval)
+        self.end_time = self.start_time + timedelta(minutes=self.resource.sample_interval)
         self.sample_time = self.end_time + timedelta(minutes=self.resource.sample_delay)
         if (self.sample_time > datetime.now(pytz.utc)):
             return False
@@ -57,15 +84,12 @@ class ECSManagementClient:
 
         return namespaces
 
-    def isValidElem(self, elem):
-        return (elem is not None) and (elem.text is not None) and bool(elem.text.strip())
-
     def getNamespaceSample(self, id, startstr, endstr):
         namespace = {'id': id, 'total_buckets': 0}
         next_marker = ''
 
         while True:
-            r = requests.get(self.base_url + '/object/billing/namespace/' + id + '/sample?sizeunit=KB&include_bucket_detail=true&start_time=' + startstr + '&end_time=' + endstr + next_marker, headers=self.headers, verify=self.resource.cert_path)
+            r = requests.get(self.resource.ecs_endpoint + '/object/billing/namespace/' + id + '/sample?sizeunit=KB&include_bucket_detail=true&start_time=' + startstr + '&end_time=' + endstr + next_marker, headers=self.headers, verify=self.resource.ecs_cert_path)
             root = ET.fromstring(r.text)
 
             if root.tag == 'error':
@@ -104,7 +128,7 @@ class ECSManagementClient:
         namespace['buckets_deleted'] = 0
         next_marker = ''
         while True:
-            r = requests.get(self.base_url + '/vdc/events?namespace=' + id + '&start_time=' + startstr + '&end_time=' + endstr + next_marker, headers=self.headers, verify=self.resource.cert_path)
+            r = requests.get(self.resource.ecs_endpoint + '/vdc/events?namespace=' + id + '&start_time=' + startstr + '&end_time=' + endstr + next_marker, headers=self.headers, verify=self.resource.ecs_cert_path)
             root = ET.fromstring(r.text)
             for auditevent in root.findall('./auditevent/description'):
                 if self.BUCKET_CREATED_PATTERN.match(auditevent.text):

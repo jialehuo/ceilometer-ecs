@@ -10,15 +10,20 @@ function init_ceilometer_ecs {
 }
 
 function configure_ceilometer_ecs {
-    iniset $CEILOMETER_CONF ecs project_name $CEILOMETER_ECS_PROJECT_NAME
-    iniset $CEILOMETER_CONF ecs ecs_ip $CEILOMETER_ECS_ECS_IP
-    iniset $CEILOMETER_CONF ecs api_port $CEILOMETER_ECS_API_PORT
-    iniset $CEILOMETER_CONF ecs username $CEILOMETER_ECS_USERNAME
-    iniset $CEILOMETER_CONF ecs password $CEILOMETER_ECS_PASSWORD
-    iniset $CEILOMETER_CONF ecs cert_path $CEILOMETER_ECS_CERT_PATH
-    iniset $CEILOMETER_CONF ecs start_time $CEILOMETER_ECS_START_TIME
-    iniset $CEILOMETER_CONF ecs interval $CEILOMETER_ECS_INTERVAL
+    iniset $CEILOMETER_CONF ecs ecs_endpoint $CEILOMETER_ECS_ECS_ENDPOINT
+    iniset $CEILOMETER_CONF ecs ecs_username $CEILOMETER_ECS_ECS_USERNAME
+    iniset $CEILOMETER_CONF ecs ecs_password $CEILOMETER_ECS_ECS_PASSWORD
+    iniset $CEILOMETER_CONF ecs ecs_cert_path $CEILOMETER_ECS_ECS_CERT_PATH
+    iniset $CEILOMETER_CONF ecs sample_start_time $CEILOMETER_ECS_SAMPLE_START_TIME
+    iniset $CEILOMETER_CONF ecs sample_interval $CEILOMETER_ECS_SAMPLE_INTERVAL
     iniset $CEILOMETER_CONF ecs sample_delay $CEILOMETER_ECS_SAMPLE_DELAY
+    iniset $CEILOMETER_CONF ecs ceilometer_endpoint $CEILOMETER_ECS_CEILOMETER_ENDPOINT
+    iniset $CEILOMETER_CONF ecs os_project_name $CEILOMETER_ECS_OS_PROJECT_NAME
+    iniset $CEILOMETER_CONF ecs os_project_domain_name $CEILOMETER_ECS_OS_PROJECT_DOMAIN_NAME
+    iniset $CEILOMETER_CONF ecs os_username $CEILOMETER_ECS_OS_USERNAME
+    iniset $CEILOMETER_CONF ecs os_password $CEILOMETER_ECS_OS_PASSWORD
+    iniset $CEILOMETER_CONF ecs os_user_domain_name $CEILOMETER_ECS_OS_USER_DOMAIN_NAME
+    iniset $CEILOMETER_CONF ecs os_auth_url $CEILOMETER_ECS_OS_AUTH_URL
 }
 
 # check for service enabled
