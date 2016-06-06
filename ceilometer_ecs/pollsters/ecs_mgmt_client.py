@@ -75,7 +75,12 @@ class ECSManagementClient:
         endstr = self.end_time.astimezone(pytz.utc).isoformat()
         startstr = self.start_time.astimezone(pytz.utc).isoformat()
 
-        for project in manager.keystone.projects.list():
+        if manager.keystone.version == 'v3':
+            projects = manager.keystone.projects.list()
+        else:
+            projects = manager.keystone.tenants.list()
+
+        for project in projects:
             namespace = self.getNamespaceSample(project.id, startstr, endstr)
             if namespace is not None:
                 namespaces.append(namespace)

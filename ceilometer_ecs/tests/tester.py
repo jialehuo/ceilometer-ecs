@@ -25,6 +25,7 @@ class Projects:
 class Keystone:
     def __init__(self, projects):
         self.projects = projects
+        self.version = 'v3'
 
 class Manager:
     def __init__(self, keystone):
@@ -38,13 +39,13 @@ resource = ecs_resource.ECSResource(
     sample_start_time=dateutil.parser.parse('2016-05-24T12:00:00Z'),
     sample_interval=60,
     sample_delay=30,
-    ceilometer_endpoint='http://127.0.0.1:8777',
+    ceilometer_endpoint='http://192.168.0.11:8777',
     os_project_name='demo',
     os_project_domain_name='Default',
     os_username='admin',
     os_password='secret',
     os_user_domain_name='Default',
-    os_auth_url='http://127.0.0.1:5000/'
+    os_auth_url='http://192.168.0.11:5000/'
 )
 
 # client test
@@ -89,14 +90,15 @@ def testAPI():
 
     client = ceiloclient.Client(resource.ceilometer_endpoint, **kwargs)
     query_samples = client.query_samples
-    filter = "{\"=\": {\"meter\": \"ecs.objects\"}}"
+    filter = "{\"=\": {\"meter\": \"image.size\"}}"
     orderby = "[{\"timestamp\": \"DESC\"}]"
     limit = 1
 
     result = query_samples.query(filter=filter, orderby=orderby, limit=limit)
-    print result[0].to_dict().get("metadata").get("sample_end_time")
+    # print result[0].to_dict().get("metadata").get("sample_end_time")
+    print result
 
-# testAPI()
+testAPI()
 testClient()
 testDAO()
-# testAPI()
+testAPI()
