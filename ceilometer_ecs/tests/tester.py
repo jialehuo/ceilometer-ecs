@@ -44,7 +44,7 @@ resource = ecs_resource.ECSResource(
     os_username='admin',
     os_password='secret',
     os_user_domain_name='Default',
-    os_auth_url='http://127.0.0.1/identity'
+    os_auth_url='http://127.0.0.1:5000/'
 )
 
 # client test
@@ -96,7 +96,7 @@ def testAPI():
     result = query_samples.query(filter=filter, orderby=orderby, limit=limit)
     print result[0].to_dict().get("metadata").get("sample_end_time")
 
-testAPI()
+# testAPI()
 testClient()
 testDAO()
-testAPI()
+# testAPI()
