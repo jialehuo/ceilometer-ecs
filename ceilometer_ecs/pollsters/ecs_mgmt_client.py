@@ -12,6 +12,8 @@ class ECSManagementClient:
     BUCKET_CREATED_PATTERN = re.compile('Bucket \\S+ has been created')
     BUCKET_DELETED_PATTERN = re.compile('Bucket \\S+ has been deleted')
     START_TIME_CACHE = 'ecs_start_time'
+    END_TIME_CACHE = 'ecs_end_time'
+    TIMESTAMP_CACHE = 'ecs_timestamp'
 
     def __init__(self, resource):
         self.resource = resource 
@@ -50,30 +52,29 @@ class ECSManagementClient:
         limit = 1
 
         result = client.query_samples.query(filter=filter, orderby=orderby, limit=limit)
-        if (result is not None) and (len(result) > 0) and (result[0].to_dict() is not None) and (result[0].to_dict().get("metadata") is not None) and (result[0].to_dict().get("metadata").get("sample_end_time") is not None):
-            return dateutil.parser.parse(result[0].to_dict().get("metadata").get("sample_end_time"))
+        if (result is not None) and (len(result) > 0) and (result[0].to_dict() is not None) and (result[0].to_dict().get("metadata") is not None) and (result[0].to_dict().get("metadata").get("end_time") is not None):
+            return dateutil.parser.parse(result[0].to_dict().get("metadata").get("end_time"))
         else:
             return self.resource.sample_start_time
 
-    def isSampleTime(self, cache):
-        if self.START_TIME_CACHE not in cache:
-            cache[self.START_TIME_CACHE] = self.getStartTime()
-
-        self.start_time = cache[self.START_TIME_CACHE]
+    def isSampleTime(self):
+        self.start_time = self.getStartTime()
         self.end_time = self.start_time + timedelta(minutes=self.resource.sample_interval)
-        self.sample_time = self.end_time + timedelta(minutes=self.resource.sample_delay)
-        if (self.sample_time > datetime.now(pytz.utc)):
+        sample_time = self.end_time + timedelta(minutes=self.resource.sample_delay)
+        self.timestamp = datetime.now(pytz.utc)
+        if (sample_time > self.timestamp):
             return False
         else:
             return True
 
     def getNamespaceSamples(self, manager, cache):
         namespaces = []
-        if not self.isSampleTime(cache):
+        if not self.isSampleTime():
             return namespaces
 
-        endstr = self.end_time.astimezone(pytz.utc).isoformat()
-        startstr = self.start_time.astimezone(pytz.utc).isoformat()
+        cache[self.START_TIME_CACHE] = self.start_time.astimezone(pytz.utc).isoformat()
+        cache[self.END_TIME_CACHE] = self.end_time.astimezone(pytz.utc).isoformat()
+        cache[self.TIMESTAMP_CACHE] = self.timestamp.astimezone(pytz.utc).isoformat()
 
         if manager.keystone.version == 'v3':
             projects = manager.keystone.projects.list()
@@ -81,20 +82,18 @@ class ECSManagementClient:
             projects = manager.keystone.tenants.list()
 
         for project in projects:
-            namespace = self.getNamespaceSample(project.id, startstr, endstr)
+            namespace = self.getNamespaceSample(project.id, cache[self.START_TIME_CACHE], cache[self.END_TIME_CACHE])
             if namespace is not None:
                 namespaces.append(namespace)
 
-        cache[self.START_TIME_CACHE] = self.end_time
-
         return namespaces
 
-    def getNamespaceSample(self, id, startstr, endstr):
+    def getNamespaceSample(self, id, start_time, end_time):
         namespace = {'id': id, 'total_buckets': 0}
         next_marker = ''
 
         while True:
-            r = requests.get(self.resource.ecs_endpoint + '/object/billing/namespace/' + id + '/sample?sizeunit=KB&include_bucket_detail=true&start_time=' + startstr + '&end_time=' + endstr + next_marker, headers=self.headers, verify=self.resource.ecs_cert_path)
+            r = requests.get(self.resource.ecs_endpoint + '/object/billing/namespace/' + id + '/sample?sizeunit=KB&include_bucket_detail=true&start_time=' + start_time + '&end_time=' + end_time + next_marker, headers=self.headers, verify=self.resource.ecs_cert_path)
             root = ET.fromstring(r.text)
 
             if root.tag == 'error':
@@ -116,10 +115,6 @@ class ECSManagementClient:
                 namespace['ingress'] = long(root.find('ingress').text.strip())
             if self.isValidElem(root.find('egress')):
                 namespace['egress'] = long(root.find('egress').text.strip())
-            if self.isValidElem(root.find('sample_start_time')):
-                namespace['sample_start_time'] = dateutil.parser.parse(root.find('sample_start_time').text.strip())
-            if self.isValidElem(root.find('sample_end_time')):
-                namespace['sample_end_time'] = dateutil.parser.parse(root.find('sample_end_time').text.strip())
             if (root.findall('./bucket_billing_sample/name') is not None):
                 namespace['total_buckets'] += len(root.findall('./bucket_billing_sample/name'))
             
@@ -133,7 +128,7 @@ class ECSManagementClient:
         namespace['buckets_deleted'] = 0
         next_marker = ''
         while True:
-            r = requests.get(self.resource.ecs_endpoint + '/vdc/events?namespace=' + id + '&start_time=' + startstr + '&end_time=' + endstr + next_marker, headers=self.headers, verify=self.resource.ecs_cert_path)
+            r = requests.get(self.resource.ecs_endpoint + '/vdc/events?namespace=' + id + '&start_time=' + start_time + '&end_time=' + end_time + next_marker, headers=self.headers, verify=self.resource.ecs_cert_path)
             root = ET.fromstring(r.text)
             for auditevent in root.findall('./auditevent/description'):
                 if self.BUCKET_CREATED_PATTERN.match(auditevent.text):

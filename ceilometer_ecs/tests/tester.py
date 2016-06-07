@@ -67,7 +67,7 @@ def testClient():
 def testDAO():
     dao = ecs_billing_dao.ECSBillingDAO(resource)
     vdc_id = dao.getVDCLocalID()
-    resource.vdc_id = vdc_id
+    resource.ecs_vdc_id = vdc_id
 
     projs = [proj2]
     projects = Projects(projs)
