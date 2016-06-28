@@ -29,7 +29,7 @@ sudo pip install python-dateutil iso8601
 ### DevStack
 To use this project in DevStack, add this repository as a plugin:
 
-     enable_plugin ceilometer-ecs https://hwstashprd01.isus.emc.com:8443/scm/naoil/ceilometer-ecs.git
+     enable_plugin ceilometer-ecs https://github.com/jialehuo/ceilometer-ecs.git
      enable_service ceilometer-ecs
 
 ### OpenStack
