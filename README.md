@@ -13,16 +13,20 @@ This module has the following dependancies that must be satisfied before install
 
 1. NTP: this module relies on accurate time to decide when to poll remote ECS instances, so NTP is required on the server. To enable NTP, follow the steps below on a Ubuntu server, for example.
 
+```bash
     sudo ntpdate <time.server.ip.address>
     sudo apt install ntp
     sudo vi /etc/ntp.conf (add NTP servers)
     sudo service ntp restart
     ntpq -p (verify NTP status)
+```
 
 2. Python packages: this module relies on additional Python packages that are not installed on DevStack by default. Follow the steps below to install them.
 
+```bash
     sudo pip install --upgrade ndg-httpsclient
     sudo pip install python-dateutil iso8601
+```
 
 3. ECS management REST API certificate: to make calls to poll ECS meters, a certificate has to be installed on the server running the module. Refer to ECS documentation on how to find the certificate. Once found, simply copy the certificate onto the server, and set the location in the configuration parameters of the module (detailed below in the Configuration section).
 
@@ -63,12 +67,14 @@ The following section have to be appended to /etc/ceilometer/ceilometer.conf
 
 1. The module's sampling behavior can do "catch up", i.e., it samples meters from the past if sample_start_time is set to the past. By default, the custom ECS pollers are run every 10 minutes, when they check if it's time to poll ECS for the respective meters, and if yes, they poll the meters. The frequency to run the custom ECS pollers can be changed by editing /etc/ceilometer/pipeline.yaml, and add the following text to the 'sources' section:
 
+```yaml
     - name: ecs_source
       interval: <interval to run the poller in seconds>
       meters:
           - "ecs.objects"
       sinks:
           - meter_sink
+```
 
 2. The frequency to poll ECS for meters is actually defined by 'sample_interval' parameter defined in the config file /etc/ceilometer/ceilometer.conf
 
