@@ -13,51 +13,51 @@ This module has the following dependancies that must be satisfied before install
 
 1. NTP: this module relies on accurate time to decide when to poll remote ECS instances, so NTP is required on the server. To enable NTP, follow the steps below on a Ubuntu server, for example.
 
-sudo ntpdate <time.server.ip.address>
-sudo apt install ntp
-sudo vi /etc/ntp.conf (add NTP servers)
-sudo service ntp restart
-ntpq -p (verify NTP status)
+    sudo ntpdate <time.server.ip.address>
+    sudo apt install ntp
+    sudo vi /etc/ntp.conf (add NTP servers)
+    sudo service ntp restart
+    ntpq -p (verify NTP status)
 
 2. Python packages: this module relies on additional Python packages that are not installed on DevStack by default. Follow the steps below to install them.
 
-sudo pip install --upgrade ndg-httpsclient
-sudo pip install python-dateutil iso8601
+    sudo pip install --upgrade ndg-httpsclient
+    sudo pip install python-dateutil iso8601
 
 3. ECS management REST API certificate: to make calls to poll ECS meters, a certificate has to be installed on the server running the module. Refer to ECS documentation on how to find the certificate. Once found, simply copy the certificate onto the server, and set the location in the configuration parameters of the module (detailed below in the Configuration section).
 
 ### DevStack
 To use this project in DevStack, add this repository as a plugin:
 
-     enable_plugin ceilometer-ecs https://github.com/jialehuo/ceilometer-ecs.git
-     enable_service ceilometer-ecs
+    enable_plugin ceilometer-ecs https://github.com/jialehuo/ceilometer-ecs.git
+    enable_service ceilometer-ecs
 
 ### OpenStack
 
 Follow the following steps to install the project on OpenStack 
 
-cd <ceilometer-ecs.dir>
-sudo python setup.py install
+    cd <ceilometer-ecs.dir>
+    sudo python setup.py install
 
 ### Post-installation Configuration
 
 The following section have to be appended to /etc/ceilometer/ceilometer.conf
 
-[ecs]
-ecs_endpoint = <ECS endpoint, e.g., https://10.1.83.51:4443>
-ecs_username = <ECS username, e.g., admin>
-ecs_password = <ECS password, e.g., secret>
-ecs_cert_path = <path to the ECS management REST API certificate, e.g., /opt/stack/ecs-mgmt.cer>
-ceilometer_endpoint = <endpoint to Ceilometer v2 API, e.g., http://127.0.0.1:8777>
-os_username = <OpenStack username, e.g., admin>
-os_password = <OpenStack password, e.g., secret>
-os_user_domain_name = <OpenStack domain name for the user, e.g., Default>
-os_project_name = <OpenStack project name for the user, e.g., demo>
-os_project_domain_name = <OpenStack domain name for the project, e.g., Default>
-os_auth_url = <OpenStack authentication URL, e.g., http://127.0.0.1/identity>
-sample_start_time = <start time for sampling, in ISO8601 format, e.g., 2016-05-27T12:00:00Z>
-sample_interval = <sampling interval in minutes, e.g., 60>
-sample_delay = <delay to the end time for sampling. Samples are polled after sample_start_time + sample_interval + sample_delay, e.g., 30>
+    [ecs]
+    ecs_endpoint = <ECS endpoint, e.g., https://10.1.83.51:4443>
+    ecs_username = <ECS username, e.g., admin>
+    ecs_password = <ECS password, e.g., secret>
+    ecs_cert_path = <path to the ECS management REST API certificate, e.g., /opt/stack/ecs-mgmt.cer>
+    ceilometer_endpoint = <endpoint to Ceilometer v2 API, e.g., http://127.0.0.1:8777>
+    os_username = <OpenStack username, e.g., admin>
+    os_password = <OpenStack password, e.g., secret>
+    os_user_domain_name = <OpenStack domain name for the user, e.g., Default>
+    os_project_name = <OpenStack project name for the user, e.g., demo>
+    os_project_domain_name = <OpenStack domain name for the project, e.g., Default>
+    os_auth_url = <OpenStack authentication URL, e.g., http://127.0.0.1/identity>
+    sample_start_time = <start time for sampling, in ISO8601 format, e.g., 2016-05-27T12:00:00Z>
+    sample_interval = <sampling interval in minutes, e.g., 60>
+    sample_delay = <delay to the end time for sampling. Samples are polled after sample_start_time + sample_interval + sample_delay, e.g., 30>
 
 ### Notes
 
@@ -78,15 +78,15 @@ sample_delay = <delay to the end time for sampling. Samples are polled after sam
 
 Once properly installed and configured, Ceilometer-ECS should start collecting ECS usage data through Ceilometer. To see the meters, run:
 
-$ ceilometer meter-list
+    $ ceilometer meter-list
 
 To see samples collected, run:
 
-$ ceilometer sample-list
+    $ ceilometer sample-list
 
 To see the details of a specific sample, run:
 
-$ ceilometer sample-show <sample_id>
+    $ ceilometer sample-show <sample_id>
 
 ## Future
 
