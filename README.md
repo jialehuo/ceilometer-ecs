@@ -12,6 +12,7 @@ This package provides files used by OpenStack Ceilometer to monitor the usage me
 This module has the following dependancies that must be satisfied before installation:
 
 1. NTP: this module relies on accurate time to decide when to poll remote ECS instances, so NTP is required on the server. To enable NTP, follow the steps below on a Ubuntu server, for example.
+
   ```bash
     sudo ntpdate <time.server.ip.address>
     sudo apt install ntp
@@ -20,6 +21,7 @@ This module has the following dependancies that must be satisfied before install
     ntpq -p (verify NTP status)
   ```
 2. Python packages: this module relies on additional Python packages that are not installed on DevStack by default. Follow the steps below to install them.
+
   ```bash
     sudo pip install --upgrade ndg-httpsclient
     sudo pip install python-dateutil iso8601
@@ -62,6 +64,7 @@ The following section have to be appended to /etc/ceilometer/ceilometer.conf
 ### Notes
 
 1. The module's sampling behavior can do "catch up", i.e., it samples meters from the past if sample_start_time is set to the past. By default, the custom ECS pollers are run every 10 minutes, when they check if it's time to poll ECS for the respective meters, and if yes, they poll the meters. The frequency to run the custom ECS pollers can be changed by editing /etc/ceilometer/pipeline.yaml, and add the following text to the 'sources' section:
+
   ```yaml
     - name: ecs_source
       interval: <interval to run the poller in seconds>
@@ -101,4 +104,4 @@ Ceilometer-ECS is freely distributed under the <a href="http://emccode.github.io
 
 Support
 -------
-Please file bugs and issues at the Github issues page. For more general discussions you can contact the EMC Code team at <a href="https://groups.google.com/forum/#!forum/emccode-users">Google Groups</a> or tagged with **EMC** on <a href="https://stackoverflow.com">Stackoverflow.com</a>. The code and documentation are released with no warranties or SLAs and are intended to be supported through a community driven process.
+Please file bugs and issues on the Github issues page for this project. This is to help keep track and document everything related to this repo. For general discussions and further support you can join the [EMC {code} Community slack channel](http://community.emccode.com/). Lastly, for questions asked on [Stackoverflow.com](https://stackoverflow.com) please tag them with **EMC**. The code and documentation are released with no warranties or SLAs and are intended to be supported through a community driven process.
